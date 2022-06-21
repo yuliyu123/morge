@@ -18,8 +18,11 @@ clap = { version = "3.2.4", features = ["derive"] }
 
 # clap = {version = "~2.27.0", features = ["yaml"]}
 clap_complete = "3.0.4"
+dotenv = "0.15.0"
+dotenv_codegen = "0.15.0"
 
 # log
 tracing-error = "0.2.0"
 tracing-subscriber = { version = "0.3", features = ["registry", "env-filter", "fmt"] }
 tracing = "0.1.26"
+

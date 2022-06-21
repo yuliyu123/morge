@@ -2,13 +2,16 @@ use std::fs;
 use std::fs::{OpenOptions};
 use std::io;
 use std::path::Path;
+use std::sync::Arc;
+use std::time::Duration;
 use ethers::core::{
     abi::{
         token::{LenientTokenizer, StrictTokenizer, Tokenizer}, ParamType, Token,
     },
     types::*,
 };
-use eyre::{Result, WrapErr};
+use ethers::prelude::{Provider, RetryClient, Http, LocalWallet};
+use eyre::{Result, WrapErr, eyre};
 use std::str::FromStr;
 
 pub fn touch(path: &Path) -> io::Result<()> {
@@ -73,11 +76,40 @@ pub fn parse_tokens<'a, I: IntoIterator<Item = (&'a ParamType, &'a str)>>(
         .wrap_err("Failed to parse tokens")
 }
 
-pub fn is_existed(path: &String) -> eyre::Result<(bool, String)> {
-    let metadata = fs::metadata(path)?;
-    match metadata.accessed() {
-        Ok(_) => return Ok((true, path.clone())),
-        Err(_) => eyre::bail!("{} not existed", path),
+pub fn is_existed(path: &String) -> bool{
+    let path = Path::new(path);
+    return path.exists();
+}
+
+
+/// Gives out a provider with a `100ms` interval poll if it's a localhost URL (most likely an anvil
+/// node) and with the default, `7s` if otherwise.
+pub fn get_http_provider(url: &str, aggressive: bool) -> Arc<Provider<RetryClient<Http>>> {
+    let (max_retry, initial_backoff) = if aggressive { (1000, 1) } else { (10, 1000) };
+
+    let provider = Provider::<RetryClient<Http>>::new_client(url, max_retry, initial_backoff)
+        .expect("Bad fork provider.");
+
+    Arc::new(if url.contains("127.0.0.1") || url.contains("localhost") {
+        provider.interval(Duration::from_millis(100))
+    } else {
+        provider
+    })
+}
+
+pub fn get_from_private_key(private_key: &str) -> Result<LocalWallet> {
+    let privk = private_key.strip_prefix("0x").unwrap_or(private_key);
+    LocalWallet::from_str(privk)
+        .map_err(|x| eyre!("Failed to create wallet from private key: {x}"))
+}
+
+pub fn is_contract_existed(contract: String) -> bool {
+    println!("contract: {}", contract);
+    tracing::info!("add contract:  {}", contract);
+
+    let contract_vec = contract.split(":").collect::<Vec<&str>>();
+    if !is_existed(&contract_vec[0].into()) {
+        return false;
     }
-    // Ok(())
+    true
 }

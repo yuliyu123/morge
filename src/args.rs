@@ -1,7 +1,4 @@
-use std::ffi::OsString;
-use std::path::PathBuf;
-
-use clap::{arg, Command, Arg, App};
+use clap::{Command, Arg};
 
 pub fn cli() -> Command<'static> {
     Command::new("morge")
@@ -13,27 +10,29 @@ pub fn cli() -> Command<'static> {
         .subcommand(
             Command::new("init")
                 .about("init deploy config")
-                .arg_required_else_help(true),
         )
         .subcommand(
             Command::new("add")
-                .about("adds contract files and set constructor args")
-                .arg(Arg::with_name("file")
-                    .short('f')
-                    .long("file")
+                .about("adds contract files and set contract constructor args")
+                .arg(Arg::with_name("contract")
+                    .short('c')
+                    .long("contract")
                     .takes_value(true)
                     .help("A cool file"))
                 .arg(Arg::with_name("args")
                     .long("args")
                     .takes_value(true)
-                    .help("Five less than your favorite number"))
+                    .help("Five less than your favorite number")
+                    .multiple_values(true)
+                )
                 .arg_required_else_help(true),
         )
         .subcommand(
             Command::new("remove")
                 .about("remove contract files")
-                .arg(Arg::with_name("contract-name")
-                    .long("contract-name")
+                .arg(Arg::with_name("contract")
+                    .short('c')
+                    .long("contract")
                     .takes_value(true)
                     .help("set to removed contract name"))
                 .arg_required_else_help(true)
@@ -75,69 +74,4 @@ pub fn cli() -> Command<'static> {
             Command::new("list")
                 .about("list the added contract files")
         )
-}
-
-
-#[test]
-fn test_morge_args() {
-    let matches = cli().get_matches();
-
-    match matches.subcommand() {
-        Some(("init", sub_matches)) => {
-            println!(
-                "Cloning {}",
-                sub_matches.get_one::<String>("REMOTE").expect("required")
-            );
-        }
-        Some(("add", sub_matches)) => {
-            let stash_command = sub_matches.subcommand().unwrap();
-            match stash_command {
-                ("-f", sub_matches) => {
-                    let sol_file = sub_matches.get_one::<String>("sol_file");
-                    println!("add sol_file {:?}", sol_file);
-                }
-                ("-args", sub_matches) => {
-                    let args = sub_matches
-                    .get_many::<PathBuf>("PATH")
-                    .into_iter()
-                    .flatten()
-                    .collect::<Vec<_>>();
-                    println!("constructor args {:?}", args);
-                }
-                (name, _) => {
-                    unreachable!("Unsupported subcommand `{}`", name)
-                }
-            }
-        }
-        Some(("deploy", sub_matches)) => {
-            println!(
-                "deploy to {}",
-                sub_matches.get_one::<String>("REMOTE").expect("required")
-            );
-        }
-        Some(("verify", sub_matches)) => {
-            println!(
-                "verify addr {}",
-                sub_matches.get_one::<String>("ADDR").expect("required")
-            );
-        }
-        Some(("list", sub_matches)) => {
-            println!("list the added contracts files");
-        }
-        Some(("clean", sub_matches)) => {
-            println!("clean deployed contracts cache");
-        }
-        Some(("set", sub_matches)) => {
-            println!("set rpc-url and privatekey");
-        }
-        Some((ext, sub_matches)) => {
-            let args = sub_matches
-                .get_many::<OsString>("")
-                .into_iter()
-                .flatten()
-                .collect::<Vec<_>>();
-            println!("Calling out to {:?} with {:?}", ext, args);
-        }
-        _ => unreachable!(), // If all subcommands are defined above, anything else is unreachabe!()
-    }
 }
