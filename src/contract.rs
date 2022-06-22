@@ -1,23 +1,14 @@
-// pub mod utils;
 use crate::utils::*;
-use ethers::core::abi::Contract as Abi;
-use ethers::prelude::artifacts::bytecode;
 use ethers::{
     abi::{Constructor, Token},
-    prelude::ContractFactory,
+    core::abi::Contract as Abi,
+    prelude::*,
 };
-use ethers::{prelude::*, utils::Anvil};
 use eyre::{Context, Result};
 use serde::{Deserialize, Serialize};
+use std::io;
 use std::path::Path;
-use std::{convert::TryFrom, sync::Arc, time::Duration};
-use std::{io, option};
-
-extern crate dotenv;
-
-use dotenv::dotenv;
-use std::env;
-
+use std::sync::Arc;
 
 // contract info to deploy
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -46,32 +37,34 @@ impl ContractInfo {
             }
         }
         ContractInfo {
-            name: name,
-            contract: contract,
-            args: args,
+            name,
+            contract,
+            args,
             abi: Abi::default(),
             bytecode: Bytes::default(),
         }
     }
     pub async fn compile(&mut self) -> Result<(), io::Error> {
-        let contract = Path::new(&env!("CARGO_MANIFEST_DIR")).join(&self.contract);
-        if !contract.exists() {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "contract path not found",
-            ));
+        match is_contract_existed(self.contract.clone()) {
+            true => {
+                let compiled = Solc::default()
+                    .compile_source(self.contract.clone())
+                    .expect("Could not compile contracts");
+                let (abi, bytecode, _runtime_bytecode) = compiled
+                    .find(self.name.to_string())
+                    .expect("could not find contract name")
+                    .into_parts_or_default();
+                self.abi = abi;
+                self.bytecode = bytecode;
+                Ok(())
+            }
+            false => {
+                return Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    "contract path not found",
+                ));
+            }
         }
-
-        let compiled = Solc::default()
-            .compile_source(contract)
-            .expect("Could not compile contracts");
-        let (abi, bytecode, _runtime_bytecode) = compiled
-            .find(self.name.to_string())
-            .expect("could not find contract name")
-            .into_parts_or_default();
-        self.abi = abi;
-        self.bytecode = bytecode;
-        Ok(())
     }
 
     // pub async fn create_and_run(&self, contract_info: &mut ContractInfo, provider, signer) -> eyre::Result<()> {
@@ -82,10 +75,12 @@ impl ContractInfo {
         let bin = self.bytecode.clone();
 
         // Add arguments to constructor
-        let args = self.parse_constructor_args(&abi.clone().constructor.unwrap(), &self.args)?;
+        let args = parse_constructor_args(&abi.clone().constructor.unwrap(), &self.args)?;
 
+        println!("args: {:?}", args);
         // deploy contract
-        self.deploy(abi.clone(), bin.clone(), args, provider).await?;
+        self.deploy(abi.clone(), bin.clone(), args, provider)
+            .await?;
         Ok(())
     }
 
@@ -96,22 +91,18 @@ impl ContractInfo {
         args: Vec<Token>,
         provider: M,
     ) -> eyre::Result<()> {
+        println!("deploying contract abi: {:?}", abi);
         let provider = Arc::new(provider);
-        let factory = ContractFactory::new(abi.clone(), bin, provider.clone());
+        let factory = ContractFactory::new(abi, bin, provider.clone());
 
+        println!("contract args {:?}", args);
         // start deploy
-        let is_args_empty = self.args.is_empty();
-        let deployer = factory.deploy_tokens(args.clone()).context("Failed to deploy contract").map_err(|e| {
-            if is_args_empty {
-                e.wrap_err("No arguments provided for contract constructor. Consider --constructor-args")
-            } else {
-                e
-            }
-        })?;
+        let deployer = factory.deploy_tokens(args.clone())?.legacy();
 
         let deployer_address = provider
             .default_sender()
             .expect("no sender address set for provider");
+        println!("Deployer address: {}", deployer_address);
         let (deployed_contract, receipt) = deployer.send_with_receipt().await?;
         let address = deployed_contract.address();
 
@@ -121,79 +112,78 @@ impl ContractInfo {
 
         Ok(())
     }
-
-    fn parse_constructor_args(
-        &self,
-        constructor: &Constructor,
-        constructor_args: &[String],
-    ) -> Result<Vec<Token>> {
-        let params = constructor
-            .inputs
-            .iter()
-            .zip(constructor_args)
-            .map(|(input, arg)| (&input.kind, arg.as_str()))
-            .collect::<Vec<_>>();
-
-        parse_tokens(params, true)
-    }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
+
+    use ethers::utils::{Anvil, AnvilInstance};
+
     use super::*;
 
-    // fn get_provider<M: Middleware + 'static>() -> Arc<M> {
-    //     println!("RPC_URL: {}", dotenv!("RPC_URL"));
-    //     println!("PRI_KEY: {}", dotenv!("PRI_KEY"));
-    //     let provider = get_http_provider(
-    //         dotenv!("RPC_URL"),
-    //         false,
-    //     );
-    //     let wallet = get_from_private_key(dotenv!("PRI_KEY"));
-    //     let provider = SignerMiddleware::new(provider.clone(), wallet.unwrap());
-    //     Arc::new(provider)
-    // }
+    pub fn connect(anvil: &AnvilInstance, idx: usize) -> Arc<Provider<Http>> {
+        let sender = anvil.addresses()[idx];
+        let provider = Provider::<Http>::try_from(anvil.endpoint())
+            .unwrap()
+            .interval(Duration::from_millis(10u64))
+            .with_sender(sender);
+        Arc::new(provider)
+    }
 
     // // 0x5fbd…0aa3
     #[tokio::test]
-    async fn test_deploy() {
+    async fn test_deploy_success() {
+        // given
         let mut contract_info = ContractInfo {
             name: "SimpleStorage".to_string(),
             contract: "src/examples/contract.sol".to_string(),
-            args: vec![],
+            args: vec!["value".into()],
             abi: Abi::default(),
             bytecode: Bytes::default(),
         };
-        // let provider = get_provider();
-        // super::run(&mut contract_info, provider).await;
+
+        let provider = get_http_provider(dotenv!("RPC_URL"), false);
+        let chain_id = provider.get_chainid().await.unwrap();
+        let wallet = get_from_private_key(dotenv!("PRI_KEY"));
+        let wallet = wallet.unwrap().with_chain_id(chain_id.as_u64());
+        let provider = SignerMiddleware::new(provider.clone(), wallet);
+        let provider = Arc::new(provider);
+
+        // when
+        contract_info.run(provider).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_anvil_deploy_success() {
+        let mut contract_info = ContractInfo {
+            name: "SimpleStorage".to_string(),
+            contract: "src/examples/contract.sol".to_string(),
+            args: vec!["value".into()],
+            abi: Abi::default(),
+            bytecode: Bytes::default(),
+        };
+        contract_info.compile().await.unwrap();
+        let anvil = Anvil::new().spawn();
+
+        let client = connect(&anvil, 0);
+        let factory = ContractFactory::new(
+            contract_info.abi.clone(),
+            contract_info.bytecode.clone(),
+            client.clone(),
+        );
+        let abi = contract_info.abi.clone();
+        let args =
+            parse_constructor_args(&abi.clone().constructor.unwrap(), &contract_info.args).unwrap();
+        println!("args: {:?}", args);
+
+        let deployer = factory.deploy_tokens(args).unwrap().legacy();
+        // assert!(deployer.call().await.is_ok());
+        let (contract, receipt) = deployer.send_with_receipt().await.unwrap();
+        assert_eq!(receipt.contract_address.unwrap(), contract.address());
+        println!("receipt: {}", receipt.contract_address.unwrap());
+
+        let get_value = contract.method::<_, String>("getValue", ()).unwrap();
+        println!("get_value: {:?}", get_value.call().await.unwrap());
     }
 }
-// #[tokio::test]
-// async fn test_compile_success() {
-//     let mut contract_info = ContractInfo {
-//         name: "SimpleStorage".into(),
-//         path: Some("src/examples/contract.sol".into()),
-//         source: None,
-//         args: vec![],
-//         abi: Abi::default(),
-//         bytecode: Bytes::default(),
-//     };
-//     compile(&mut contract_info).await;
-//     println!("{}: ", serde_json::to_string(&contract_info).unwrap());
-// }
-
-// #[tokio::test]
-// #[ignore = "skipped"]
-// async fn test_compile_with_noexisted_file() {
-//     let mut contract_info = ContractInfo {
-//         name: "SimpleStorage".to_string(),
-//         path: Some("examples/contract.sol".to_string()),
-//         source: None,
-//         args: vec![],
-//         abi: Abi::default(),
-//         bytecode: Bytes::default(),
-//     };
-//     let _err = compile(&mut contract_info).await;
-//     println!("{}: ", serde_json::to_string(&contract_info).unwrap());
-//     // assert_eq!(err.err(), io::Error::new(io::ErrorKind::NotFound, "contract path not found"));
-// }

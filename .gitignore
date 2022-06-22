@@ -1,3 +1,4 @@
 /target
 .morge
 .env
+Cargo.lock

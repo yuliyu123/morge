@@ -1,7 +1,7 @@
 extern crate clap;
 
-use std::ffi::OsString;
 use morge::{args::cli, config::restore_cfg, config::Config, Executer};
+use std::ffi::OsString;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -17,28 +17,35 @@ async fn main() -> eyre::Result<()> {
             let rpc = sub_matches.value_of("rpc-url").expect("set rpc failed");
             println!("The rpc-url is: {}", rpc);
 
-            let key = sub_matches.value_of("private-key").expect("set private key failed");
+            let key = sub_matches
+                .value_of("private-key")
+                .expect("set private key failed");
             println!("The pri-key is: {}", key);
 
             let mut cfg = restore_cfg()?;
             cfg.set_rpc_and_key(rpc.to_string().clone(), key.to_string().clone())?;
         }
         Some(("add", sub_matches)) => {
-            let contract = sub_matches.value_of("contract").expect("get sol file failed");
+            let contract = sub_matches
+                .value_of("contract")
+                .expect("get sol file failed");
             println!("The contract is: {}", contract);
 
-            let args = sub_matches.get_many::<String>("args")
-            .into_iter()
-            .flatten()
-            .map(|item| format!("{item:?}"))
-            .collect::<Vec<String>>();
+            let args = sub_matches
+                .get_many::<String>("args")
+                .into_iter()
+                .flatten()
+                .map(|item| format!("{item:?}"))
+                .collect::<Vec<String>>();
             println!("Adding {:?}", args);
 
             let mut cfg = restore_cfg()?;
             cfg.add_contract(contract.into(), args)?;
         }
         Some(("remove", sub_matches)) => {
-            let sol_file = sub_matches.value_of("contract").expect("get contract failed");
+            let sol_file = sub_matches
+                .value_of("contract")
+                .expect("get contract failed");
             println!("The to removed contract is: {}", sol_file);
 
             let mut cfg = restore_cfg()?;
@@ -51,7 +58,7 @@ async fn main() -> eyre::Result<()> {
             );
             let cfg = restore_cfg()?;
             let mut executor = Executer::new();
-            executor.cfg = cfg;
+            executor.set_config(cfg);
             executor.run().await?;
         }
         Some(("verify", sub_matches)) => {

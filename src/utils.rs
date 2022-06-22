@@ -1,30 +1,35 @@
+use ethers::{
+    abi::Constructor,
+    core::{
+        abi::{
+            token::{LenientTokenizer, StrictTokenizer, Tokenizer},
+            ParamType, Token,
+        },
+        types::*,
+    },
+    prelude::*,
+};
+// use ethers::prelude::{Http, LocalWallet, Provider, RetryClient};
+use eyre::{eyre, Result, WrapErr};
 use std::fs;
-use std::fs::{OpenOptions};
+use std::fs::OpenOptions;
 use std::io;
 use std::path::Path;
+use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
-use ethers::core::{
-    abi::{
-        token::{LenientTokenizer, StrictTokenizer, Tokenizer}, ParamType, Token,
-    },
-    types::*,
-};
-use ethers::prelude::{Provider, RetryClient, Http, LocalWallet};
-use eyre::{Result, WrapErr, eyre};
-use std::str::FromStr;
 
 pub fn touch(path: &Path) -> io::Result<()> {
     match OpenOptions::new().create(true).write(true).open(path) {
         Ok(_) => Ok(()),
-        Err(e) => Err(e)
+        Err(e) => Err(e),
     }
 }
 
 pub fn create_dir(dir: &Path) -> io::Result<()> {
     match fs::create_dir(dir) {
         Ok(_) => Ok(()),
-        Err(e) => Err(e)
+        Err(e) => Err(e),
     }
 }
 
@@ -76,11 +81,10 @@ pub fn parse_tokens<'a, I: IntoIterator<Item = (&'a ParamType, &'a str)>>(
         .wrap_err("Failed to parse tokens")
 }
 
-pub fn is_existed(path: &String) -> bool{
+pub fn is_existed(path: &String) -> bool {
     let path = Path::new(path);
     return path.exists();
 }
-
 
 /// Gives out a provider with a `100ms` interval poll if it's a localhost URL (most likely an anvil
 /// node) and with the default, `7s` if otherwise.
@@ -99,8 +103,7 @@ pub fn get_http_provider(url: &str, aggressive: bool) -> Arc<Provider<RetryClien
 
 pub fn get_from_private_key(private_key: &str) -> Result<LocalWallet> {
     let privk = private_key.strip_prefix("0x").unwrap_or(private_key);
-    LocalWallet::from_str(privk)
-        .map_err(|x| eyre!("Failed to create wallet from private key: {x}"))
+    LocalWallet::from_str(privk).map_err(|x| eyre!("Failed to create wallet from private key: {x}"))
 }
 
 pub fn is_contract_existed(contract: String) -> bool {
@@ -113,3 +116,31 @@ pub fn is_contract_existed(contract: String) -> bool {
     }
     true
 }
+
+pub fn parse_constructor_args(
+    constructor: &Constructor,
+    constructor_args: &[String],
+) -> Result<Vec<Token>> {
+    let params = constructor
+        .inputs
+        .iter()
+        .zip(constructor_args)
+        .map(|(input, arg)| (&input.kind, arg.as_str()))
+        .collect::<Vec<_>>();
+
+    parse_tokens(params, true)
+}
+
+// pub async fn get_provider(rpc_url: String, pri_key: String) -> Arc<SignerMiddleware<Provider<Provider>, Wallet<SigningKey>>> {
+//     let provider = get_http_provider(
+//         rpc_url.as_str(),
+//         false,
+//     );
+
+//     let wallet =
+//         get_from_private_key(&pri_key.as_str());
+//     let chain_id = provider.get_chainid().await.unwrap();
+//     let wallet = wallet.unwrap().with_chain_id(chain_id.as_u64());
+//     let provider = SignerMiddleware::new(provider.clone(), wallet);
+//     provider
+// }

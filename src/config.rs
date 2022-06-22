@@ -1,16 +1,16 @@
-use std::io::{self, Write, Read};
-use std::path::Path;
-use std::fs::File;
-use std::fs;
 use crate::contract::ContractInfo;
-use crate::{INIT_PATH, INIT_CFG, utils::*, Err};
+use crate::{utils::*, Err, INIT_CFG, INIT_PATH};
 use ethers::prelude::SignerMiddleware;
 use futures::stream::TryChunksError;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json::Result;
+use std::fs;
+use std::fs::File;
+use std::io::{self, Read, Write};
+use std::path::Path;
 
 // init info, include mainnet and chain_id info, etc.
-#[derive(Clone, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Config {
     pub rpc_url: Option<String>,
     pub pri_key: Option<String>,
@@ -79,7 +79,8 @@ impl Config {
             true => {
                 // let mut contracts = self.contracts.to_vec();
                 let contract_info = ContractInfo::new(contract, vec![]);
-                self.contracts.retain(|item| item.contract != contract_info.contract);
+                self.contracts
+                    .retain(|item| item.contract != contract_info.contract);
                 save(self)?;
                 Ok(())
             }
@@ -95,7 +96,7 @@ impl Config {
 
         let json = std::fs::read_to_string(INIT_CFG).unwrap();
         println!("json string: {}", json);
-        let contract_infos = from_json(&json).unwrap().contracts;            
+        let contract_infos = from_json(&json).unwrap().contracts;
 
         if contract_infos.is_empty() {
             println!("no solidity path");
@@ -105,7 +106,7 @@ impl Config {
             println!("contract name: {:?}", contract_info.name);
             println!("contract contract: {:?}", contract_info.contract);
             println!("contract args: {:?}", contract_info.args);
-        };
+        }
     }
 
     pub fn clean(&mut self) -> eyre::Result<()> {
@@ -116,7 +117,6 @@ impl Config {
         Ok(())
     }
 }
-
 
 #[cfg(test)]
 #[test]
@@ -144,7 +144,11 @@ fn test_add_contract_success() {
     // given
     test_init();
     let mut cfg = restore_cfg().unwrap();
-    let contract_file = Path::new(&env!("CARGO_MANIFEST_DIR")).join("src/examples/contract.sol").to_str().unwrap().to_string();
+    let contract_file = Path::new(&env!("CARGO_MANIFEST_DIR"))
+        .join("src/examples/contract.sol")
+        .to_str()
+        .unwrap()
+        .to_string();
     let contract = contract_file.clone() + ":SimpleStorage";
     let args = vec!["value".into()];
 
@@ -160,8 +164,12 @@ fn test_add_contract_success() {
 fn test_add_contract_failed_with_wrong_path() {
     // given
     test_init();
-    let cfg = restore_cfg().unwrap();
-    let contract_file = Path::new(&env!("CARGO_MANIFEST_DIR")).join("examples/contract.sol").to_str().unwrap().to_string();
+    let mut cfg = restore_cfg().unwrap();
+    let contract_file = Path::new(&env!("CARGO_MANIFEST_DIR"))
+        .join("examples/contract.sol")
+        .to_str()
+        .unwrap()
+        .to_string();
     let contract = contract_file.clone() + ":SimpleStorage";
     // let args = vec!["value".into()];
 
@@ -178,7 +186,11 @@ fn test_remove_contract_success() {
     // given
     test_add_contract_success();
     let mut cfg = restore_cfg().unwrap();
-    let contract_file = Path::new(&env!("CARGO_MANIFEST_DIR")).join("src/examples/contract.sol").to_str().unwrap().to_string();
+    let contract_file = Path::new(&env!("CARGO_MANIFEST_DIR"))
+        .join("src/examples/contract.sol")
+        .to_str()
+        .unwrap()
+        .to_string();
     let contract = contract_file.clone() + ":SimpleStorage";
     assert_eq!(cfg.contracts.len(), 1);
     assert_eq!(cfg.contracts[0].contract, contract);
@@ -189,7 +201,6 @@ fn test_remove_contract_success() {
     // then
     assert_eq!(cfg.contracts.len(), 0);
 }
-
 
 #[test]
 fn test_clean() {
