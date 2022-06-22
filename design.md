@@ -22,7 +22,7 @@ parse commandline -> add to compile tasks -> compile -> deploy -> return results
 
 <!-- passed -->
 init: cargo run -- init
-set: cargo run -- set --rpc-url https://rinkeby.infura.io/v3/c8c81708601f4c6ca0ad9b0c7bb1911f --private-key 0x00
+set: cargo run -- set --rpc-url https://rinkeby.infura.io/v3/c8c81708601f4c6ca0ad9b0c7bb1911f --private-key 1b21c77b2d99d0ddf1edccc6575c79fa3c9466f8a735fbd16833f530da52f0bc
 list: cargo run -- list
-add: cargo run -- add -c x.sol::x --args 2 1 3
+add: cargo run -- add -c src/examples/contract.sol.sol:SimpleStorage --args "value 111"
 remove: cargo run -- remove -c x.sol::x

@@ -44,6 +44,7 @@ impl ContractInfo {
             bytecode: Bytes::default(),
         }
     }
+    
     pub async fn compile(&mut self) -> Result<(), io::Error> {
         match is_contract_existed(self.contract.clone()) {
             true => {
