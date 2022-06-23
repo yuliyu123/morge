@@ -22,29 +22,25 @@ pub struct ContractInfo {
 
 impl ContractInfo {
     pub fn new(contract: String, args: Vec<String>) -> Self {
-        if !Path::new(&contract.split(":").collect::<Vec<&str>>()[0]).exists() {
+        let contract_vec = contract.split(":").collect::<Vec<&str>>();
+        if contract_vec.len() != 2 {
+            panic!("invalid contract format: {}", contract);
+        }
+
+        let sol_file = contract_vec[0];
+        if !Path::new(sol_file).exists() {
             panic!("contract {} not exists", contract);
         }
-        let contract_vec = contract.split("/").collect::<Vec<&str>>();
 
-        let mut name = "".to_string();
-        match contract_vec.len() {
-            1 => {
-                name = contract_vec[0].to_string();
-            }
-            _ => {
-                name = contract_vec[contract_vec.len() - 1].to_string();
-            }
-        }
         ContractInfo {
-            name,
-            contract,
+            name: contract_vec[1].to_string(),
+            contract: sol_file.to_string(),
             args,
             abi: Abi::default(),
             bytecode: Bytes::default(),
         }
     }
-    
+
     pub async fn compile(&mut self) -> Result<(), io::Error> {
         match is_contract_existed(self.contract.clone()) {
             true => {
@@ -93,13 +89,13 @@ impl ContractInfo {
         provider: M,
     ) -> eyre::Result<()> {
         println!("deploying contract abi: {:?}", abi);
+        println!("contract args {:?}", args);
+
         let provider = Arc::new(provider);
         let factory = ContractFactory::new(abi, bin, provider.clone());
 
-        println!("contract args {:?}", args);
         // start deploy
         let deployer = factory.deploy_tokens(args.clone())?.legacy();
-
         let deployer_address = provider
             .default_sender()
             .expect("no sender address set for provider");
@@ -122,15 +118,6 @@ mod tests {
     use ethers::utils::{Anvil, AnvilInstance};
 
     use super::*;
-
-    pub fn connect(anvil: &AnvilInstance, idx: usize) -> Arc<Provider<Http>> {
-        let sender = anvil.addresses()[idx];
-        let provider = Provider::<Http>::try_from(anvil.endpoint())
-            .unwrap()
-            .interval(Duration::from_millis(10u64))
-            .with_sender(sender);
-        Arc::new(provider)
-    }
 
     // // 0x5fbd…0aa3
     #[tokio::test]
@@ -157,6 +144,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_anvil_deploy_success() {
+        // given
         let mut contract_info = ContractInfo {
             name: "SimpleStorage".to_string(),
             contract: "src/examples/contract.sol".to_string(),
@@ -178,12 +166,14 @@ mod tests {
             parse_constructor_args(&abi.clone().constructor.unwrap(), &contract_info.args).unwrap();
         println!("args: {:?}", args);
 
+        // when
         let deployer = factory.deploy_tokens(args).unwrap().legacy();
-        // assert!(deployer.call().await.is_ok());
+        assert!(deployer.call().await.is_ok());
         let (contract, receipt) = deployer.send_with_receipt().await.unwrap();
+
+        // then
         assert_eq!(receipt.contract_address.unwrap(), contract.address());
         println!("receipt: {}", receipt.contract_address.unwrap());
-
         let get_value = contract.method::<_, String>("getValue", ()).unwrap();
         println!("get_value: {:?}", get_value.call().await.unwrap());
     }

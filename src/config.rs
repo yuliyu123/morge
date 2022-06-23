@@ -26,6 +26,9 @@ fn to_json(cfg: &Config) -> Result<String> {
 }
 
 pub fn save(cfg: &Config) -> eyre::Result<()> {
+    if !is_existed(&INIT_PATH.into()) {
+        fs::create_dir(INIT_PATH)?;
+    }
     let json = to_json(cfg);
     let mut file = File::create(Path::new(INIT_CFG))?;
     file.write_all(json?.as_bytes())?;
@@ -34,7 +37,6 @@ pub fn save(cfg: &Config) -> eyre::Result<()> {
 
 pub fn restore_cfg() -> eyre::Result<Config> {
     let file_str = fs::read_to_string(INIT_CFG)?;
-    println!("file_str: {}", file_str);
     let cfg = from_json(&file_str)?;
     Ok(cfg)
 }
@@ -54,6 +56,7 @@ impl Config {
         self.rpc_url = Some(rpc_url);
         self.pri_key = Some(pri_key);
         save(self)?;
+        println!("set rpc url and private key success");
         Ok(())
     }
 
@@ -62,9 +65,17 @@ impl Config {
         match is_contract_existed(contract.clone()) {
             true => {
                 let contract_info = ContractInfo::new(contract, args);
-                if self.contracts.contains(&contract_info) {
-                    return Err(eyre::eyre!("contract already existed"));
-                }
+                if self
+                    .contracts
+                    .iter()
+                    .map(|contract| {
+                        contract.contract == contract_info.contract
+                            && contract.name == contract_info.name
+                    })
+                    .any(|x| x)
+                {
+                    return Err(eyre::eyre!("contract already exists"));
+                };
                 self.contracts.push(contract_info);
                 save(self)?;
                 Ok(())
@@ -77,11 +88,27 @@ impl Config {
     pub fn remove_contract(&mut self, contract: String) -> eyre::Result<()> {
         match is_contract_existed(contract.clone()) {
             true => {
-                // let mut contracts = self.contracts.to_vec();
-                let contract_info = ContractInfo::new(contract, vec![]);
-                self.contracts
-                    .retain(|item| item.contract != contract_info.contract);
+                let contract_info = ContractInfo::new(contract.clone(), vec![]);
+                if !self
+                    .contracts
+                    .iter()
+                    .map(|contract| {
+                        contract.contract == contract_info.contract
+                            && contract.name == contract_info.name
+                    })
+                    .any(|x| x)
+                {
+                    return Err(eyre::eyre!("contract not exists"));
+                };
+
+                // todo: add ut to cover
+                println!("contract info: {:?}", contract_info);
+                self.contracts.retain(|item| {
+                    println!("item info: {:?}", item);
+                    item.contract != contract_info.contract && item.name != contract_info.name
+                });
                 save(self)?;
+                println!("remove contract: {} success", contract);
                 Ok(())
             }
             false => Err(eyre::eyre!("contract not found")),
@@ -95,7 +122,6 @@ impl Config {
         }
 
         let json = std::fs::read_to_string(INIT_CFG).unwrap();
-        println!("json string: {}", json);
         let contract_infos = from_json(&json).unwrap().contracts;
 
         if contract_infos.is_empty() {

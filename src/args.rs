@@ -16,7 +16,7 @@ pub fn cli() -> Command<'static> {
                         .short('c')
                         .long("contract")
                         .takes_value(true)
-                        .help("A cool file"),
+                        .help("specify the contract file"),
                 )
                 .arg(
                     Arg::with_name("args")
@@ -59,21 +59,18 @@ pub fn cli() -> Command<'static> {
                 .arg_required_else_help(true),
         )
         .subcommand(
-            Command::new("deploy")
-                .about("the chain to deploy")
-                .arg_required_else_help(true),
-        )
-        .subcommand(
             Command::new("verify")
                 .about("verify contract state")
                 .arg(
                     Arg::with_name("addr")
+                        .short('a')
                         .long("addr")
                         .takes_value(true)
                         .help("verify contract state"),
                 )
                 .arg_required_else_help(true),
         )
+        .subcommand(Command::new("deploy").about("the chain to deploy"))
         .subcommand(Command::new("clean").about("clean the deploy cache"))
         .subcommand(Command::new("list").about("list the added contract files"))
 }

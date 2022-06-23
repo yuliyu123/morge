@@ -1,7 +1,7 @@
 extern crate clap;
 
 use morge::{args::cli, config::restore_cfg, config::Config, Executer};
-use std::ffi::OsString;
+use std::{env, ffi::OsString};
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -13,23 +13,21 @@ async fn main() -> eyre::Result<()> {
             Config::new()?;
         }
         Some(("set", sub_matches)) => {
-            println!("set rpc-url and privatekey");
             let rpc = sub_matches.value_of("rpc-url").expect("set rpc failed");
-            println!("The rpc-url is: {}", rpc);
-
             let key = sub_matches
                 .value_of("private-key")
                 .expect("set private key failed");
-            println!("The pri-key is: {}", key);
 
             let mut cfg = restore_cfg()?;
-            cfg.set_rpc_and_key(rpc.to_string().clone(), key.to_string().clone())?;
+            cfg.set_rpc_and_key(rpc.to_string(), key.to_string())?;
         }
         Some(("add", sub_matches)) => {
-            let contract = sub_matches
-                .value_of("contract")
-                .expect("get sol file failed");
-            println!("The contract is: {}", contract);
+            let contract = env::current_dir()?.to_str().unwrap().to_string()
+                + "/"
+                + sub_matches
+                    .value_of("contract")
+                    .expect("get sol file failed");
+            println!("add contract: {}", contract);
 
             let args = sub_matches
                 .get_many::<String>("args")
@@ -43,19 +41,17 @@ async fn main() -> eyre::Result<()> {
             cfg.add_contract(contract.into(), args)?;
         }
         Some(("remove", sub_matches)) => {
-            let sol_file = sub_matches
-                .value_of("contract")
-                .expect("get contract failed");
-            println!("The to removed contract is: {}", sol_file);
+            let contract = env::current_dir()?.to_str().unwrap().to_string()
+                + "/"
+                + sub_matches
+                    .value_of("contract")
+                    .expect("get sol file failed");
 
             let mut cfg = restore_cfg()?;
-            cfg.remove_contract(sol_file.into())?;
+            cfg.remove_contract(contract.into())?;
         }
-        Some(("deploy", sub_matches)) => {
-            println!(
-                "start deploy to {}",
-                sub_matches.get_one::<String>("REMOTE").expect("required")
-            );
+        Some(("deploy", _sub_matches)) => {
+            println!("start deploy");
             let cfg = restore_cfg()?;
             let mut executor = Executer::new();
             executor.set_config(cfg);

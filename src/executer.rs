@@ -4,7 +4,6 @@ use crate::config::Config;
 use crate::contract::ContractInfo;
 use crate::utils::*;
 use ethers::core::abi::Contract as Abi;
-use ethers::prelude::SignerMiddleware;
 use ethers::prelude::*;
 
 pub struct Executer {
@@ -12,11 +11,14 @@ pub struct Executer {
     // verifier: Verifier,
 }
 
-impl<'a> Executer {
+impl Executer {
     pub fn new() -> Self {
         Self {
-            cfg: Config::new().unwrap(),
-            // verifier: None,
+            cfg: Config {
+                rpc_url: None,
+                pri_key: None,
+                contracts: vec![],
+            }, // verifier: None,
         }
     }
 

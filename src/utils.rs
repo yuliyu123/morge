@@ -1,3 +1,4 @@
+use ethers::utils::{Anvil, AnvilInstance};
 use ethers::{
     abi::Constructor,
     core::{
@@ -9,7 +10,6 @@ use ethers::{
     },
     prelude::*,
 };
-// use ethers::prelude::{Http, LocalWallet, Provider, RetryClient};
 use eyre::{eyre, Result, WrapErr};
 use std::fs;
 use std::fs::OpenOptions;
@@ -82,8 +82,7 @@ pub fn parse_tokens<'a, I: IntoIterator<Item = (&'a ParamType, &'a str)>>(
 }
 
 pub fn is_existed(path: &String) -> bool {
-    let path = Path::new(path);
-    return path.exists();
+    Path::new(path).exists()
 }
 
 /// Gives out a provider with a `100ms` interval poll if it's a localhost URL (most likely an anvil
@@ -111,10 +110,7 @@ pub fn is_contract_existed(contract: String) -> bool {
     tracing::info!("add contract:  {}", contract);
 
     let contract_vec = contract.split(":").collect::<Vec<&str>>();
-    if !is_existed(&contract_vec[0].into()) {
-        return false;
-    }
-    true
+    is_existed(&contract_vec[0].into())
 }
 
 pub fn parse_constructor_args(
@@ -131,7 +127,7 @@ pub fn parse_constructor_args(
     parse_tokens(params, true)
 }
 
-// pub async fn get_provider(rpc_url: String, pri_key: String) -> Arc<SignerMiddleware<Provider<Provider>, Wallet<SigningKey>>> {
+// pub async fn get_provider(rpc_url: String, pri_key: String) -> Arc<Provider<Http>> {
 //     let provider = get_http_provider(
 //         rpc_url.as_str(),
 //         false,
@@ -144,3 +140,12 @@ pub fn parse_constructor_args(
 //     let provider = SignerMiddleware::new(provider.clone(), wallet);
 //     provider
 // }
+
+pub fn connect(anvil: &AnvilInstance, idx: usize) -> Arc<Provider<Http>> {
+    let sender = anvil.addresses()[idx];
+    let provider = Provider::<Http>::try_from(anvil.endpoint())
+        .unwrap()
+        .interval(Duration::from_millis(10u64))
+        .with_sender(sender);
+    Arc::new(provider)
+}
