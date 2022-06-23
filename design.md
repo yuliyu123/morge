@@ -25,8 +25,8 @@ parse commandline -> add to compile tasks -> compile -> deploy -> return results
 cargo run -- init
 cargo run -- set --rpc-url $RPC_URL --private-key $PRI_KEY
 cargo run -- list
-cargo run -- add -c src/examples/contract.sol:SimpleStorage --args "value 111"
-cargo run -- remove -c src/examples/contract.sol:SimpleStorage
+cargo run -- add -c examples/contract.sol:SimpleStorage --args "value 111"
+cargo run -- remove -c examples/contract.sol:SimpleStorage
 cargo run -- deploy
 cargo run -- clean
 

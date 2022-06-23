@@ -33,6 +33,18 @@ pub fn create_dir(dir: &Path) -> io::Result<()> {
     }
 }
 
+pub fn is_existed(path: &String) -> bool {
+    Path::new(path).exists()
+}
+
+pub fn is_contract_existed(contract: String) -> bool {
+    println!("contract: {}", contract);
+    tracing::info!("add contract:  {}", contract);
+
+    let contract_vec = contract.split(":").collect::<Vec<&str>>();
+    is_existed(&contract_vec[0].into())
+}
+
 /// Parses string input as Token against the expected ParamType
 // #[allow(clippy::no_effect)]
 pub fn parse_tokens<'a, I: IntoIterator<Item = (&'a ParamType, &'a str)>>(
@@ -81,8 +93,18 @@ pub fn parse_tokens<'a, I: IntoIterator<Item = (&'a ParamType, &'a str)>>(
         .wrap_err("Failed to parse tokens")
 }
 
-pub fn is_existed(path: &String) -> bool {
-    Path::new(path).exists()
+pub fn parse_constructor_args(
+    constructor: &Constructor,
+    constructor_args: &[String],
+) -> Result<Vec<Token>> {
+    let params = constructor
+        .inputs
+        .iter()
+        .zip(constructor_args)
+        .map(|(input, arg)| (&input.kind, arg.as_str()))
+        .collect::<Vec<_>>();
+
+    parse_tokens(params, true)
 }
 
 /// Gives out a provider with a `100ms` interval poll if it's a localhost URL (most likely an anvil
@@ -103,28 +125,6 @@ pub fn get_http_provider(url: &str, aggressive: bool) -> Arc<Provider<RetryClien
 pub fn get_from_private_key(private_key: &str) -> Result<LocalWallet> {
     let privk = private_key.strip_prefix("0x").unwrap_or(private_key);
     LocalWallet::from_str(privk).map_err(|x| eyre!("Failed to create wallet from private key: {x}"))
-}
-
-pub fn is_contract_existed(contract: String) -> bool {
-    println!("contract: {}", contract);
-    tracing::info!("add contract:  {}", contract);
-
-    let contract_vec = contract.split(":").collect::<Vec<&str>>();
-    is_existed(&contract_vec[0].into())
-}
-
-pub fn parse_constructor_args(
-    constructor: &Constructor,
-    constructor_args: &[String],
-) -> Result<Vec<Token>> {
-    let params = constructor
-        .inputs
-        .iter()
-        .zip(constructor_args)
-        .map(|(input, arg)| (&input.kind, arg.as_str()))
-        .collect::<Vec<_>>();
-
-    parse_tokens(params, true)
 }
 
 // pub async fn get_provider(rpc_url: String, pri_key: String) -> Arc<Provider<Http>> {
@@ -148,4 +148,33 @@ pub fn connect(anvil: &AnvilInstance, idx: usize) -> Arc<Provider<Http>> {
         .interval(Duration::from_millis(10u64))
         .with_sender(sender);
     Arc::new(provider)
+}
+
+// move to tests file later
+pub fn create_sol_files() -> std::io::Result<()> {
+    for i in 1..100 {
+        let dst = String::new() + "examples/contract" + &i.to_string() + ".sol";
+        if is_existed(&dst) {
+            println!("{} already exists", dst);
+            continue;
+        }
+        fs::copy("examples/contract.sol", dst.as_str())?;
+    }
+    Ok(())
+}
+
+pub fn delete_sol_files() -> std::io::Result<()> {
+    for i in 1..100 {
+        let dst = String::new() + "examples/contract" + &i.to_string() + ".sol";
+        if is_existed(&dst) {
+            fs::remove_file(dst.as_str()).unwrap();
+        }
+    }
+    Ok(())
+}
+
+#[test]
+pub fn test_create_sol_files () {
+    create_sol_files().unwrap();
+    delete_sol_files().unwrap();
 }

@@ -1,2 +1,2 @@
-mod deploy;
 mod abigen;
+mod deploy;

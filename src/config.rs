@@ -62,7 +62,7 @@ impl Config {
 
     // add contract and args through -f x.sol:x --args a b c
     pub fn add_contract(&mut self, contract: String, args: Vec<String>) -> eyre::Result<()> {
-        match is_contract_existed(contract.clone()) {
+        match is_contract_existed(contract.clone()) && contract.ends_with(".sol") {
             true => {
                 let contract_info = ContractInfo::new(contract, args);
                 if self
@@ -86,7 +86,7 @@ impl Config {
 
     // remove contract from config file
     pub fn remove_contract(&mut self, contract: String) -> eyre::Result<()> {
-        match is_contract_existed(contract.clone()) {
+        match is_contract_existed(contract.clone()) && contract.ends_with(".sol") {
             true => {
                 let contract_info = ContractInfo::new(contract.clone(), vec![]);
                 if !self
@@ -171,7 +171,7 @@ fn test_add_contract_success() {
     test_init();
     let mut cfg = restore_cfg().unwrap();
     let contract_file = Path::new(&env!("CARGO_MANIFEST_DIR"))
-        .join("src/examples/contract.sol")
+        .join("examples/contract.sol")
         .to_str()
         .unwrap()
         .to_string();
@@ -213,7 +213,7 @@ fn test_remove_contract_success() {
     test_add_contract_success();
     let mut cfg = restore_cfg().unwrap();
     let contract_file = Path::new(&env!("CARGO_MANIFEST_DIR"))
-        .join("src/examples/contract.sol")
+        .join("examples/contract.sol")
         .to_str()
         .unwrap()
         .to_string();

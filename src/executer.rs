@@ -58,7 +58,7 @@ impl Executer {
 async fn test_batch_run_success() {
     let contract_info = ContractInfo {
         name: "SimpleStorage".to_string(),
-        contract: "src/examples/contract.sol".to_string(),
+        contract: "examples/contract.sol".to_string(),
         args: vec!["value".into()],
         abi: Abi::default(),
         bytecode: Bytes::default(),

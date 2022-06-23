@@ -42,7 +42,7 @@ impl ContractInfo {
     }
 
     pub async fn compile(&mut self) -> Result<(), io::Error> {
-        match is_contract_existed(self.contract.clone()) {
+        match is_contract_existed(self.contract.clone()) && self.contract.ends_with(".sol") {
             true => {
                 let compiled = Solc::default()
                     .compile_source(self.contract.clone())
@@ -58,7 +58,7 @@ impl ContractInfo {
             false => {
                 return Err(io::Error::new(
                     io::ErrorKind::NotFound,
-                    "contract path not found",
+                    "contract not found",
                 ));
             }
         }
@@ -113,9 +113,7 @@ impl ContractInfo {
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
-
-    use ethers::utils::{Anvil, AnvilInstance};
+    use ethers::utils::Anvil;
 
     use super::*;
 
@@ -125,7 +123,7 @@ mod tests {
         // given
         let mut contract_info = ContractInfo {
             name: "SimpleStorage".to_string(),
-            contract: "src/examples/contract.sol".to_string(),
+            contract: "examples/contract.sol".to_string(),
             args: vec!["value".into()],
             abi: Abi::default(),
             bytecode: Bytes::default(),
@@ -147,7 +145,7 @@ mod tests {
         // given
         let mut contract_info = ContractInfo {
             name: "SimpleStorage".to_string(),
-            contract: "src/examples/contract.sol".to_string(),
+            contract: "examples/contract.sol".to_string(),
             args: vec!["value".into()],
             abi: Abi::default(),
             bytecode: Bytes::default(),
