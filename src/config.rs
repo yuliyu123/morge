@@ -113,7 +113,7 @@ impl Config {
         }
     }
 
-    pub fn list(self) {
+    pub fn list() {
         let cfg_path = Path::new(INIT_CFG);
         if !cfg_path.exists() {
             println!("cfg file not existed");

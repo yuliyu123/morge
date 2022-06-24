@@ -57,7 +57,7 @@ async fn main() -> eyre::Result<()> {
         }
         Some(("list", _sub_matches)) => {
             println!("list the added contracts files");
-            Executer::list()?;
+            Executer::list();
         }
         Some(("clean", _sub_matches)) => {
             println!("clean deployed contracts cache");

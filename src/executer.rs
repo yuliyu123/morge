@@ -49,10 +49,8 @@ impl Executer {
         Ok(())
     }
 
-    pub fn list() -> eyre::Result<()> {
-        let cfg = restore_cfg()?;
-        cfg.list();
-        Ok(())
+    pub fn list() {
+        Config::list();
     }
 
     pub fn clean() -> eyre::Result<()> {
