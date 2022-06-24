@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::config::Config;
+use crate::config::{restore_cfg, save, Config};
 use crate::contract::ContractInfo;
 use crate::utils::*;
 use ethers::core::abi::Contract as Abi;
@@ -22,11 +22,48 @@ impl Executer {
         }
     }
 
-    pub fn set_config(&mut self, cfg: Config) {
+    pub fn init() -> eyre::Result<()> {
+        save(&Config::new())?;
+        Ok(())
+    }
+
+    pub fn set_rpc_and_key(rpc_url: &str, pri_key: &str) -> eyre::Result<()> {
+        let mut cfg = restore_cfg()?;
+        cfg.set_rpc_and_key(rpc_url.to_string(), pri_key.to_string())?;
+        Ok(())
+    }
+
+    fn set_config(&mut self, cfg: Config) {
         self.cfg = cfg;
     }
 
-    pub async fn run(self) -> eyre::Result<()> {
+    pub fn add_contract(contract: &str, args: Vec<String>) -> eyre::Result<()> {
+        let mut cfg = restore_cfg()?;
+        cfg.add_contract(contract.into(), args)?;
+        Ok(())
+    }
+
+    pub fn remove_contract(contract: &str) -> eyre::Result<()> {
+        let mut cfg = restore_cfg()?;
+        cfg.remove_contract(contract.into())?;
+        Ok(())
+    }
+
+    pub fn list() -> eyre::Result<()> {
+        let cfg = restore_cfg()?;
+        cfg.list();
+        Ok(())
+    }
+
+    pub fn clean() -> eyre::Result<()> {
+        let mut cfg = restore_cfg()?;
+        cfg.clean()?;
+        Ok(())
+    }
+
+    pub async fn run(mut self) -> eyre::Result<()> {
+        let cfg = restore_cfg()?;
+        self.set_config(cfg);
         match !self.cfg.contracts.is_empty() {
             true => {
                 let provider = get_http_provider(
@@ -54,25 +91,75 @@ impl Executer {
     }
 }
 
-#[tokio::test]
-async fn test_batch_run_success() {
-    let contract_info = ContractInfo {
-        name: "SimpleStorage".to_string(),
-        contract: "examples/contract.sol".to_string(),
-        args: vec!["value".into()],
-        abi: Abi::default(),
-        bytecode: Bytes::default(),
-    };
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    let cfg = Config {
-        rpc_url: Some(dotenv!("RPC_URL").to_string()),
-        pri_key: Some(dotenv!("PRI_KEY").to_string()),
-        contracts: [contract_info].to_vec(),
-    };
+    mod util {
+        use std::fs;
 
-    println!("cfg: {:?}", cfg);
+        use crate::utils::is_existed;
 
-    let mut executer = Executer::new();
-    executer.set_config(cfg);
-    executer.run().await.unwrap();
+        pub fn create_sol_files() -> std::io::Result<()> {
+            for i in 1..100 {
+                let dst = String::new() + "examples/contract" + &i.to_string() + ".sol";
+                if is_existed(&dst) {
+                    println!("{} already exists", dst);
+                    continue;
+                }
+                fs::copy("examples/contract.sol", dst.as_str())?;
+            }
+            Ok(())
+        }
+
+        pub fn delete_sol_files() -> std::io::Result<()> {
+            for i in 1..100 {
+                let dst = String::new() + "examples/contract" + &i.to_string() + ".sol";
+                if is_existed(&dst) {
+                    fs::remove_file(dst.as_str()).unwrap();
+                }
+            }
+            Ok(())
+        }
+
+        #[test]
+        pub fn test_create_sol_files() {
+            create_sol_files().unwrap();
+            delete_sol_files().unwrap();
+        }
+    }
+
+    #[tokio::test]
+    async fn test_batch_run_success() {
+        // given
+        util::create_sol_files().unwrap();
+
+        // changed to local rpc later
+        let mut cfg = Config {
+            rpc_url: Some(dotenv!("RPC_URL").to_string()),
+            pri_key: Some(dotenv!("PRI_KEY").to_string()),
+            contracts: vec![],
+        };
+
+        for i in 1..100 {
+            let contract =
+                String::new() + "examples/contract" + &i.to_string() + ".sol:SimpleStorage";
+            let args = String::new() + "value" + &i.to_string();
+            cfg.add_contract(contract, vec![args]).unwrap();
+        }
+
+        // when
+        let mut executer = Executer::new();
+        executer.set_config(cfg.clone());
+        executer.run().await.unwrap();
+
+        // clean
+        for i in 1..100 {
+            let contract =
+                String::new() + "examples/contract" + &i.to_string() + ".sol:SimpleStorage";
+            let args = String::new() + "value" + &i.to_string();
+            cfg.remove_contract(contract).unwrap();
+        }
+        util::delete_sol_files().unwrap();
+    }
 }

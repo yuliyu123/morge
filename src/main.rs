@@ -1,7 +1,6 @@
-extern crate clap;
-
-use morge::{args::cli, config::restore_cfg, config::Config, Executer};
+use morge::{args::cli, Executer};
 use std::{env, ffi::OsString};
+extern crate clap;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -10,16 +9,15 @@ async fn main() -> eyre::Result<()> {
     match matches.subcommand() {
         Some(("init", _sub_matches)) => {
             println!("init config file");
-            Config::new()?;
+            Executer::init()?;
         }
         Some(("set", sub_matches)) => {
-            let rpc = sub_matches.value_of("rpc-url").expect("set rpc failed");
-            let key = sub_matches
+            let rpc_url = sub_matches.value_of("rpc-url").expect("set rpc failed");
+            let pri_key = sub_matches
                 .value_of("private-key")
                 .expect("set private key failed");
 
-            let mut cfg = restore_cfg()?;
-            cfg.set_rpc_and_key(rpc.to_string(), key.to_string())?;
+            Executer::set_rpc_and_key(rpc_url, pri_key)?;
         }
         Some(("add", sub_matches)) => {
             let contract = env::current_dir()?.to_str().unwrap().to_string()
@@ -37,8 +35,7 @@ async fn main() -> eyre::Result<()> {
                 .collect::<Vec<String>>();
             println!("Adding {:?}", args);
 
-            let mut cfg = restore_cfg()?;
-            cfg.add_contract(contract.into(), args)?;
+            Executer::add_contract(&contract, args)?;
         }
         Some(("remove", sub_matches)) => {
             let contract = env::current_dir()?.to_str().unwrap().to_string()
@@ -47,14 +44,11 @@ async fn main() -> eyre::Result<()> {
                     .value_of("contract")
                     .expect("get sol file failed");
 
-            let mut cfg = restore_cfg()?;
-            cfg.remove_contract(contract.into())?;
+            Executer::remove_contract(&contract)?;
         }
         Some(("deploy", _sub_matches)) => {
             println!("start deploy");
-            let cfg = restore_cfg()?;
-            let mut executor = Executer::new();
-            executor.set_config(cfg);
+            let executor = Executer::new();
             executor.run().await?;
         }
         Some(("verify", sub_matches)) => {
@@ -63,13 +57,11 @@ async fn main() -> eyre::Result<()> {
         }
         Some(("list", _sub_matches)) => {
             println!("list the added contracts files");
-            let cfg = restore_cfg()?;
-            cfg.list();
+            Executer::list()?;
         }
         Some(("clean", _sub_matches)) => {
             println!("clean deployed contracts cache");
-            let mut cfg = restore_cfg()?;
-            cfg.clean()?;
+            Executer::clean()?;
         }
         Some((ext, sub_matches)) => {
             let args = sub_matches

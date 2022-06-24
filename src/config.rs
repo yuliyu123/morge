@@ -42,14 +42,12 @@ pub fn restore_cfg() -> eyre::Result<Config> {
 }
 
 impl Config {
-    pub fn new() -> eyre::Result<Self> {
-        let cfg = Config {
+    pub fn new() -> Self {
+        Config {
             rpc_url: None,
             pri_key: None,
             contracts: vec![],
-        };
-        save(&cfg)?;
-        Ok(cfg)
+        }
     }
 
     pub fn set_rpc_and_key(&mut self, rpc_url: String, pri_key: String) -> eyre::Result<()> {
@@ -62,7 +60,7 @@ impl Config {
 
     // add contract and args through -f x.sol:x --args a b c
     pub fn add_contract(&mut self, contract: String, args: Vec<String>) -> eyre::Result<()> {
-        match is_contract_existed(contract.clone()) && contract.ends_with(".sol") {
+        match is_contract_existed(contract.clone()) {
             true => {
                 let contract_info = ContractInfo::new(contract, args);
                 if self
@@ -86,7 +84,7 @@ impl Config {
 
     // remove contract from config file
     pub fn remove_contract(&mut self, contract: String) -> eyre::Result<()> {
-        match is_contract_existed(contract.clone()) && contract.ends_with(".sol") {
+        match is_contract_existed(contract.clone()) {
             true => {
                 let contract_info = ContractInfo::new(contract.clone(), vec![]);
                 if !self
@@ -148,7 +146,7 @@ impl Config {
 #[test]
 fn test_init() {
     // given
-    let mut cfg = Config::new().unwrap();
+    let mut cfg = Config::new();
     cfg.clean().unwrap();
     let rpc_url = "http://localhost:8545";
     let pri_key = "0x1234567890123456789012345678901234567890123456789012345678901234";

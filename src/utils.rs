@@ -149,32 +149,3 @@ pub fn connect(anvil: &AnvilInstance, idx: usize) -> Arc<Provider<Http>> {
         .with_sender(sender);
     Arc::new(provider)
 }
-
-// move to tests file later
-pub fn create_sol_files() -> std::io::Result<()> {
-    for i in 1..100 {
-        let dst = String::new() + "examples/contract" + &i.to_string() + ".sol";
-        if is_existed(&dst) {
-            println!("{} already exists", dst);
-            continue;
-        }
-        fs::copy("examples/contract.sol", dst.as_str())?;
-    }
-    Ok(())
-}
-
-pub fn delete_sol_files() -> std::io::Result<()> {
-    for i in 1..100 {
-        let dst = String::new() + "examples/contract" + &i.to_string() + ".sol";
-        if is_existed(&dst) {
-            fs::remove_file(dst.as_str()).unwrap();
-        }
-    }
-    Ok(())
-}
-
-#[test]
-pub fn test_create_sol_files () {
-    create_sol_files().unwrap();
-    delete_sol_files().unwrap();
-}

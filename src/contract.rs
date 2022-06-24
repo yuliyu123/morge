@@ -150,29 +150,10 @@ mod tests {
             abi: Abi::default(),
             bytecode: Bytes::default(),
         };
-        contract_info.compile().await.unwrap();
         let anvil = Anvil::new().spawn();
-
         let client = connect(&anvil, 0);
-        let factory = ContractFactory::new(
-            contract_info.abi.clone(),
-            contract_info.bytecode.clone(),
-            client.clone(),
-        );
-        let abi = contract_info.abi.clone();
-        let args =
-            parse_constructor_args(&abi.clone().constructor.unwrap(), &contract_info.args).unwrap();
-        println!("args: {:?}", args);
 
         // when
-        let deployer = factory.deploy_tokens(args).unwrap().legacy();
-        assert!(deployer.call().await.is_ok());
-        let (contract, receipt) = deployer.send_with_receipt().await.unwrap();
-
-        // then
-        assert_eq!(receipt.contract_address.unwrap(), contract.address());
-        println!("receipt: {}", receipt.contract_address.unwrap());
-        let get_value = contract.method::<_, String>("getValue", ()).unwrap();
-        println!("get_value: {:?}", get_value.call().await.unwrap());
+        contract_info.run(client).await.unwrap();
     }
 }
