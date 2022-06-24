@@ -1,4 +1,3 @@
-use crate::utils::*;
 use ethers::{
     abi::{Constructor, Token},
     core::abi::Contract as Abi,
@@ -9,6 +8,8 @@ use serde::{Deserialize, Serialize};
 use std::io;
 use std::path::Path;
 use std::sync::Arc;
+
+use crate::utils::{fs::*, parse::*};
 
 // contract info to deploy
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -28,8 +29,11 @@ impl ContractInfo {
         }
 
         let sol_file = contract_vec[0];
-        if !Path::new(sol_file).exists() {
-            panic!("contract {} not exists", contract);
+        if !Path::new(sol_file).exists() || !sol_file.ends_with(".sol") {
+            panic!(
+                "contract {} not exists or is't sol file, pls check, sweet~~~",
+                contract
+            );
         }
 
         ContractInfo {
@@ -74,7 +78,7 @@ impl ContractInfo {
         // Add arguments to constructor
         let args = parse_constructor_args(&abi.clone().constructor.unwrap(), &self.args)?;
 
-        println!("args: {:?}", args);
+        // println!("args: {:?}", args);
         // deploy contract
         self.deploy(abi.clone(), bin.clone(), args, provider)
             .await?;
@@ -88,8 +92,8 @@ impl ContractInfo {
         args: Vec<Token>,
         provider: M,
     ) -> eyre::Result<()> {
-        println!("deploying contract abi: {:?}", abi);
-        println!("contract args {:?}", args);
+        // println!("deploying contract abi: {:?}", abi);
+        // println!("contract args {:?}", args);
 
         let provider = Arc::new(provider);
         let factory = ContractFactory::new(abi, bin, provider.clone());
@@ -117,7 +121,6 @@ mod tests {
 
     use super::*;
 
-    // // 0x5fbd…0aa3
     #[tokio::test]
     async fn test_deploy_success() {
         // given
@@ -129,29 +132,13 @@ mod tests {
             bytecode: Bytes::default(),
         };
 
-        let provider = get_http_provider(dotenv!("RPC_URL"), false);
-        let chain_id = provider.get_chainid().await.unwrap();
-        let wallet = get_from_private_key(dotenv!("PRI_KEY"));
-        let wallet = wallet.unwrap().with_chain_id(chain_id.as_u64());
-        let provider = SignerMiddleware::new(provider.clone(), wallet);
-        let provider = Arc::new(provider);
+        // use production env here
+        // let client = get_provider(&anvil, dotenv!("RPC_URL").to_string(), dotenv!("PRI_KEY").to_string()).await;
 
-        // when
-        contract_info.run(provider).await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn test_anvil_deploy_success() {
-        // given
-        let mut contract_info = ContractInfo {
-            name: "SimpleStorage".to_string(),
-            contract: "examples/contract.sol".to_string(),
-            args: vec!["value".into()],
-            abi: Abi::default(),
-            bytecode: Bytes::default(),
-        };
-        let anvil = Anvil::new().spawn();
-        let client = connect(&anvil, 0);
+        // need declare here to guarantee anvil's lifetime
+        let anvil = &Anvil::new().spawn();
+        // use anvil endpoint here
+        let client = get_provider(&anvil, "".to_string(), "".to_string()).await;
 
         // when
         contract_info.run(client).await.unwrap();

@@ -2,9 +2,10 @@ use std::sync::Arc;
 
 use crate::config::{restore_cfg, save, Config};
 use crate::contract::ContractInfo;
-use crate::utils::*;
+use crate::utils::{fs::*, parse::*};
 use ethers::core::abi::Contract as Abi;
 use ethers::prelude::*;
+use ethers::utils::Anvil;
 
 pub struct Executer {
     pub cfg: Config,
@@ -64,20 +65,29 @@ impl Executer {
         self.set_config(cfg);
         match !self.cfg.contracts.is_empty() {
             true => {
-                let provider = get_http_provider(
-                    &self
-                        .cfg
-                        .rpc_url
-                        .unwrap_or_else(|| "http://localhost:8545".to_string()),
-                    false,
-                );
+                // let provider = get_http_provider(
+                //     &self
+                //         .cfg
+                //         .rpc_url
+                //         .unwrap_or_else(|| "http://localhost:8545".to_string()),
+                //     false,
+                // );
 
-                let chain_id = provider.get_chainid().await?;
-                let wallet =
-                    get_from_private_key(&self.cfg.pri_key.unwrap_or_else(|| "".to_string()));
-                let wallet = wallet?.with_chain_id(chain_id.as_u64());
-                let provider = SignerMiddleware::new(provider.clone(), wallet);
-                let provider = Arc::new(provider);
+                // let chain_id = provider.get_chainid().await?;
+                // let wallet =
+                //     get_from_private_key(&self.cfg.pri_key.unwrap_or_else(|| "".to_string()));
+                // let wallet = wallet?.with_chain_id(chain_id.as_u64());
+                // let provider = SignerMiddleware::new(provider.clone(), wallet);
+                // let provider = Arc::new(provider);
+
+                let anvil = &Anvil::new().spawn();
+                let provider = get_provider(
+                    anvil,
+                    self.cfg.rpc_url.unwrap_or_else(|| "".to_string()),
+                    self.cfg.pri_key.unwrap_or_else(|| "".to_string()),
+                )
+                .await;
+                // let provider = Arc::new(provider);
 
                 for mut contract in self.cfg.contracts {
                     contract.run(provider.clone()).await?;
@@ -94,12 +104,12 @@ mod tests {
     use super::*;
 
     mod util {
-        use std::fs;
+        use std::{fs, u8};
 
-        use crate::utils::is_existed;
+        use crate::utils::fs::*;
 
-        pub fn create_sol_files() -> std::io::Result<()> {
-            for i in 1..100 {
+        pub fn create_sol_files(num: u8) -> std::io::Result<()> {
+            for i in 0..num {
                 let dst = String::new() + "examples/contract" + &i.to_string() + ".sol";
                 if is_existed(&dst) {
                     println!("{} already exists", dst);
@@ -110,8 +120,8 @@ mod tests {
             Ok(())
         }
 
-        pub fn delete_sol_files() -> std::io::Result<()> {
-            for i in 1..100 {
+        pub fn delete_sol_files(num: u8) -> std::io::Result<()> {
+            for i in 0..num {
                 let dst = String::new() + "examples/contract" + &i.to_string() + ".sol";
                 if is_existed(&dst) {
                     fs::remove_file(dst.as_str()).unwrap();
@@ -121,25 +131,29 @@ mod tests {
         }
 
         #[test]
+        #[ignore]
         pub fn test_create_sol_files() {
-            create_sol_files().unwrap();
-            delete_sol_files().unwrap();
+            create_sol_files(100).unwrap();
+            delete_sol_files(100).unwrap();
         }
     }
 
     #[tokio::test]
-    async fn test_batch_run_success() {
+    async fn test_batch_contracts_run_success() {
+        // util::delete_sol_files().unwrap();
+        // Executer::clean().unwrap();
         // given
-        util::create_sol_files().unwrap();
+        util::create_sol_files(100).unwrap();
 
-        // changed to local rpc later
+        // changed to local anvil rpc
         let mut cfg = Config {
-            rpc_url: Some(dotenv!("RPC_URL").to_string()),
-            pri_key: Some(dotenv!("PRI_KEY").to_string()),
+            rpc_url: Some("".to_string()),
+            pri_key: Some("".to_string()),
             contracts: vec![],
         };
 
-        for i in 1..100 {
+        let num: u8 = 100;
+        for i in 0..num {
             let contract =
                 String::new() + "examples/contract" + &i.to_string() + ".sol:SimpleStorage";
             let args = String::new() + "value" + &i.to_string();
@@ -151,13 +165,8 @@ mod tests {
         executer.set_config(cfg.clone());
         executer.run().await.unwrap();
 
-        // clean
-        for i in 1..100 {
-            let contract =
-                String::new() + "examples/contract" + &i.to_string() + ".sol:SimpleStorage";
-            let args = String::new() + "value" + &i.to_string();
-            cfg.remove_contract(contract).unwrap();
-        }
-        util::delete_sol_files().unwrap();
+        // then clean
+        util::delete_sol_files(num).unwrap();
+        Executer::clean().unwrap();
     }
 }

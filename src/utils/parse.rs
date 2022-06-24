@@ -1,4 +1,5 @@
-use ethers::utils::{Anvil, AnvilInstance};
+use ethers::prelude::k256::ecdsa::SigningKey;
+use ethers::utils::AnvilInstance;
 use ethers::{
     abi::Constructor,
     core::{
@@ -11,39 +12,9 @@ use ethers::{
     prelude::*,
 };
 use eyre::{eyre, Result, WrapErr};
-use std::fs;
-use std::fs::OpenOptions;
-use std::io;
-use std::path::Path;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
-
-pub fn touch(path: &Path) -> io::Result<()> {
-    match OpenOptions::new().create(true).write(true).open(path) {
-        Ok(_) => Ok(()),
-        Err(e) => Err(e),
-    }
-}
-
-pub fn create_dir(dir: &Path) -> io::Result<()> {
-    match fs::create_dir(dir) {
-        Ok(_) => Ok(()),
-        Err(e) => Err(e),
-    }
-}
-
-pub fn is_existed(path: &String) -> bool {
-    Path::new(path).exists()
-}
-
-pub fn is_contract_existed(contract: String) -> bool {
-    println!("contract: {}", contract);
-    tracing::info!("add contract:  {}", contract);
-
-    let contract_vec = contract.split(":").collect::<Vec<&str>>();
-    is_existed(&contract_vec[0].into())
-}
 
 /// Parses string input as Token against the expected ParamType
 // #[allow(clippy::no_effect)]
@@ -109,6 +80,7 @@ pub fn parse_constructor_args(
 
 /// Gives out a provider with a `100ms` interval poll if it's a localhost URL (most likely an anvil
 /// node) and with the default, `7s` if otherwise.
+#[allow(dead_code)]
 pub fn get_http_provider(url: &str, aggressive: bool) -> Arc<Provider<RetryClient<Http>>> {
     let (max_retry, initial_backoff) = if aggressive { (1000, 1) } else { (10, 1000) };
 
@@ -127,25 +99,38 @@ pub fn get_from_private_key(private_key: &str) -> Result<LocalWallet> {
     LocalWallet::from_str(privk).map_err(|x| eyre!("Failed to create wallet from private key: {x}"))
 }
 
-// pub async fn get_provider(rpc_url: String, pri_key: String) -> Arc<Provider<Http>> {
-//     let provider = get_http_provider(
-//         rpc_url.as_str(),
-//         false,
-//     );
+// ) -> Arc<SignerMiddleware<Arc<Provider<RetryClient<Http>>>, Wallet<SigningKey>>> {
+pub async fn get_provider(
+    anvil: &AnvilInstance,
+    rpc_url: String,
+    pri_key: String,
+) -> SignerMiddleware<Provider<Http>, Wallet<SigningKey>> {
+    if rpc_url.is_empty() || pri_key.is_empty() || rpc_url.contains("http://localhost:8545") {
+        let provider = Provider::<Http>::try_from(anvil.endpoint())
+            .unwrap()
+            .interval(Duration::from_millis(10u64));
+        let wallet: LocalWallet = anvil.keys()[0].clone().into();
+        let provider = SignerMiddleware::new(provider.clone(), wallet);
+        return provider;
+    }
 
-//     let wallet =
-//         get_from_private_key(&pri_key.as_str());
-//     let chain_id = provider.get_chainid().await.unwrap();
-//     let wallet = wallet.unwrap().with_chain_id(chain_id.as_u64());
-//     let provider = SignerMiddleware::new(provider.clone(), wallet);
-//     provider
-// }
+    let provider = Provider::<Http>::try_from(rpc_url)
+        .unwrap()
+        .interval(Duration::from_millis(10u64));
+    let wallet = get_from_private_key(&pri_key.as_str());
+    let chain_id = provider.get_chainid().await.unwrap();
+    let wallet = wallet.unwrap().with_chain_id(chain_id.as_u64());
+    let provider = SignerMiddleware::new(provider.clone(), wallet);
+    // Arc::new(provider)
+    provider
+}
 
-pub fn connect(anvil: &AnvilInstance, idx: usize) -> Arc<Provider<Http>> {
+#[allow(dead_code)]
+pub fn get_anvil_provider(anvil: &AnvilInstance, idx: usize) -> Provider<Http> {
     let sender = anvil.addresses()[idx];
     let provider = Provider::<Http>::try_from(anvil.endpoint())
         .unwrap()
         .interval(Duration::from_millis(10u64))
         .with_sender(sender);
-    Arc::new(provider)
+    provider
 }
