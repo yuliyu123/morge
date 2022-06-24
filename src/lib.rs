@@ -8,7 +8,7 @@ mod executer;
 mod utils;
 pub use executer::Executer;
 
-#[macro_use]
+// #[macro_use]
 extern crate dotenv_codegen;
 
 static INIT_PATH: &str = ".morge";

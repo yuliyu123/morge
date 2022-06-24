@@ -1,15 +1,13 @@
 use crate::contract::ContractInfo;
-use crate::{Err, INIT_CFG, INIT_PATH};
-use ethers::prelude::SignerMiddleware;
-use futures::stream::TryChunksError;
+use crate::{INIT_CFG, INIT_PATH};
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
 use std::fs;
 use std::fs::File;
-use std::io::{self, Read, Write};
+use std::io::Write;
 use std::path::Path;
 
-use crate::utils::{fs::*, parse::*};
+use crate::utils::fs::*;
 
 // init info, include mainnet and chain_id info, etc.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]

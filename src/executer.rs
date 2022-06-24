@@ -1,10 +1,5 @@
-use std::sync::Arc;
-
 use crate::config::{restore_cfg, save, Config};
-use crate::contract::ContractInfo;
-use crate::utils::{fs::*, parse::*};
-use ethers::core::abi::Contract as Abi;
-use ethers::prelude::*;
+use crate::utils::parse::*;
 use ethers::utils::Anvil;
 
 pub struct Executer {

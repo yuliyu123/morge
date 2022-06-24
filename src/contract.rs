@@ -1,9 +1,9 @@
 use ethers::{
-    abi::{Constructor, Token},
+    abi::Token,
     core::abi::Contract as Abi,
     prelude::*,
 };
-use eyre::{Context, Result};
+use eyre::Result;
 use serde::{Deserialize, Serialize};
 use std::io;
 use std::path::Path;
