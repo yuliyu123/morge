@@ -16,7 +16,6 @@ https://book.getfoundry.sh/forge/deploying.html -->
 6. morge clean: clean all artifacts file, deployed files and *.json.
 7. morge list: list the added files
 8. morge remove: remove added contract
-<!-- morge update net=<new net>: update to new blockchain. -->
 
 
 parse commandline -> add to compile tasks -> compile -> deploy -> return results.
@@ -29,6 +28,4 @@ cargo run -- list
 cargo run -- remove -c examples/contract.sol:SimpleStorage
 cargo run -- deploy
 cargo run -- clean
-
-<!-- todo -->
-cargo run -- verify -a 0xxxx
+cargo run -- verify -c rinkeby -t 0xc6e08d3b5b1077f4662907fa547fab34bac033a0501655aca0b903057c118da8

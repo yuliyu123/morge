@@ -1,10 +1,10 @@
 use crate::config::{restore_cfg, save, Config};
 use crate::utils::parse::*;
+use crate::verify::Verify;
 use ethers::utils::Anvil;
 
 pub struct Executer {
     pub cfg: Config,
-    // verifier: Verifier,
 }
 
 impl Executer {
@@ -14,7 +14,7 @@ impl Executer {
                 rpc_url: None,
                 pri_key: None,
                 contracts: vec![],
-            }, // verifier: None,
+            },
         }
     }
 
@@ -60,21 +60,6 @@ impl Executer {
         self.set_config(cfg);
         match !self.cfg.contracts.is_empty() {
             true => {
-                // let provider = get_http_provider(
-                //     &self
-                //         .cfg
-                //         .rpc_url
-                //         .unwrap_or_else(|| "http://localhost:8545".to_string()),
-                //     false,
-                // );
-
-                // let chain_id = provider.get_chainid().await?;
-                // let wallet =
-                //     get_from_private_key(&self.cfg.pri_key.unwrap_or_else(|| "".to_string()));
-                // let wallet = wallet?.with_chain_id(chain_id.as_u64());
-                // let provider = SignerMiddleware::new(provider.clone(), wallet);
-                // let provider = Arc::new(provider);
-
                 let anvil = &Anvil::new().spawn();
                 let provider = get_provider(
                     anvil,
@@ -91,6 +76,11 @@ impl Executer {
             }
             false => return Err(eyre::eyre!("no contract to run")),
         }
+    }
+
+    pub async fn verify_tx(chain: &str, tx: &str) -> eyre::Result<()> {
+        Verify::verify_tx(chain, tx).await?;
+        Ok(())
     }
 }
 

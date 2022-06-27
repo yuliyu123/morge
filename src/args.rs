@@ -62,11 +62,25 @@ pub fn cli() -> Command<'static> {
             Command::new("verify")
                 .about("verify contract state")
                 .arg(
-                    Arg::with_name("addr")
-                        .short('a')
-                        .long("addr")
+                    Arg::with_name("chain")
+                        .short('c')
+                        .long("chain")
                         .takes_value(true)
-                        .help("verify contract state"),
+                        .help("provide chainnet name"),
+                )
+                .arg(
+                    Arg::with_name("tx")
+                        .short('t')
+                        .long("tx")
+                        .takes_value(true)
+                        .help("provide the transaction hash"),
+                )
+                .arg(
+                    Arg::with_name("private-key")
+                        .short('k')
+                        .long("private-key")
+                        .takes_value(true)
+                        .help("set private key"),
                 )
                 .arg_required_else_help(true),
         )

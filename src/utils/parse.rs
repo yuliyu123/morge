@@ -16,6 +16,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
 
+// copied from https://github.com/foundry-rs/foundry
 /// Parses string input as Token against the expected ParamType
 // #[allow(clippy::no_effect)]
 pub fn parse_tokens<'a, I: IntoIterator<Item = (&'a ParamType, &'a str)>>(
@@ -76,22 +77,6 @@ pub fn parse_constructor_args(
         .collect::<Vec<_>>();
 
     parse_tokens(params, true)
-}
-
-/// Gives out a provider with a `100ms` interval poll if it's a localhost URL (most likely an anvil
-/// node) and with the default, `7s` if otherwise.
-#[allow(dead_code)]
-pub fn get_http_provider(url: &str, aggressive: bool) -> Arc<Provider<RetryClient<Http>>> {
-    let (max_retry, initial_backoff) = if aggressive { (1000, 1) } else { (10, 1000) };
-
-    let provider = Provider::<RetryClient<Http>>::new_client(url, max_retry, initial_backoff)
-        .expect("Bad fork provider.");
-
-    Arc::new(if url.contains("127.0.0.1") || url.contains("localhost") {
-        provider.interval(Duration::from_millis(100))
-    } else {
-        provider
-    })
 }
 
 pub fn get_from_private_key(private_key: &str) -> Result<LocalWallet> {

@@ -1,53 +1,58 @@
-// contract info to verify
-#[derive(Serialize, Deserialize)]
-pub struct VerifyInfo {
-    pub addr: Option<String>,
+use ethers::prelude::*;
+use log::{debug, error, info, warn};
+use std::collections::HashMap;
+
+pub struct Verify;
+
+impl Verify {
+    fn get_chainnet(chain: &str) -> Chain {
+        let mut chains_map = HashMap::new();
+        chains_map.insert("eth", Chain::Mainnet);
+        chains_map.insert("ropsten", Chain::Ropsten);
+        chains_map.insert("rinkeby", Chain::Rinkeby);
+        chains_map.insert("kovan", Chain::Kovan);
+        chains_map.insert("goerli", Chain::Goerli);
+        match chains_map.contains_key(chain) {
+            true => chains_map.get(chain).unwrap().clone(),
+            false => Chain::Mainnet,
+        }
+    }
+
+    fn get_api_key(chain: &str) -> &str {
+        let key = "YRFQ5PZHZ888THDP27H4B671QYW5X4BBTU";
+        let mut keys_map = HashMap::new();
+        keys_map.insert("eth", key);
+        keys_map.insert("rinkeby", key);
+        keys_map.insert("kovan", key);
+        keys_map.insert("ropsten", key);
+        keys_map.insert("goerli", key);
+        match keys_map.contains_key(chain) {
+            true => keys_map.get(chain).unwrap().clone(),
+            false => {
+                println!("not found chain {}", chain);
+                ""
+            }
+        }
+    }
+
+    pub async fn verify_tx(chain: &str, tx: &str) -> eyre::Result<()> {
+        let chainnet = Verify::get_chainnet(chain);
+        let key = Verify::get_api_key(chain);
+        let client = Client::new(chainnet, key)?;
+
+        let status = client.check_contract_execution_status(tx).await;
+        Ok(())
+    }
 }
 
-pub fn verify(contract: String) -> Result<()> {
-    let resp = etherscan
-        .submit_contract_verification(&verify_args)
-        .await
-        .wrap_err("Failed to submit contract verification")?;
-
-    if resp.status == "0" {
-        if resp.result == "Contract source code already verified" {
-            return Ok(None);
-        }
-
-        if resp.result.starts_with("Unable to locate ContractCode at") {
-            warn!("{}", resp.result);
-            return Err(eyre!("Etherscan could not detect the deployment."));
-        }
-
-        warn!("Failed verify submission: {:?}", resp);
-        eprintln!(
-            "Encountered an error verifying this contract:\nResponse: `{}`\nDetails: `{}`",
-            resp.message, resp.result
-        );
-        std::process::exit(1);
-    }
-
-    if let Some(resp) = resp {
-        println!(
-            "Submitted contract for verification:\n\tResponse: `{}`\n\tGUID: `{}`\n\tURL: {}",
-            resp.message,
-            resp.result,
-            etherscan.address_url(self.address)
-        );
-
-        if self.watch {
-            let check_args = VerifyCheckArgs {
-                guid: resp.result,
-                chain: self.chain,
-                retry: RETRY_CHECK_ON_VERIFY,
-                etherscan_key: self.etherscan_key,
-            };
-            return check_args.run().await
-        }
-    } else {
-        println!("Contract source code already verified");
-    }
-
+#[tokio::test]
+async fn test_verify() -> eyre::Result<()> {
+    // verify(Chain::Mainnet, "I5BXNZYP5GEDWFINGVEZKYIVU2695NPQZB".to_string(), "0x20838f43529f3fe0658eef6d2ded1184df317ed816c61beb70d38a6a02372852".into()).await?;
+    let status = Verify::verify_tx(
+        "rinkeby",
+        "0xc6e08d3b5b1077f4662907fa547fab34bac033a0501655aca0b903057c118da8",
+    )
+    .await?;
+    assert_eq!(status, ());
     Ok(())
 }

@@ -1,8 +1,4 @@
-use ethers::{
-    abi::Token,
-    core::abi::Contract as Abi,
-    prelude::*,
-};
+use ethers::{abi::Token, core::abi::Contract as Abi, prelude::*};
 use eyre::Result;
 use serde::{Deserialize, Serialize};
 use std::io;

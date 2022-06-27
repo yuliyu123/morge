@@ -1,5 +1,4 @@
-use crate::contract::ContractInfo;
-use crate::{INIT_CFG, INIT_PATH};
+use log::{debug, error, info, warn};
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
 use std::fs;
@@ -7,7 +6,9 @@ use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 
+use crate::contract::ContractInfo;
 use crate::utils::fs::*;
+use crate::{INIT_CFG, INIT_PATH};
 
 // init info, include mainnet and chain_id info, etc.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -62,7 +63,7 @@ impl Config {
     pub fn add_contract(&mut self, contract: String, args: Vec<String>) -> eyre::Result<()> {
         match is_contract_existed(contract.clone()) {
             true => {
-                let contract_info = ContractInfo::new(contract, args);
+                let contract_info = ContractInfo::new(contract.clone(), args);
                 if self
                     .contracts
                     .iter()
@@ -72,7 +73,8 @@ impl Config {
                     })
                     .any(|x| x)
                 {
-                    return Err(eyre::eyre!("contract already exists"));
+                    warn!("contract {} already existed", contract);
+                    return Ok(());
                 };
                 self.contracts.push(contract_info);
                 save(self)?;
@@ -188,25 +190,25 @@ impl Config {
 //         assert_eq!(cfg.contracts[0].contract, contract);
 //     }
 
-//     #[test]
-//     fn test_add_contract_failed_with_wrong_path() {
-//         // given
-//         test_init();
-//         let mut cfg = restore_cfg().unwrap();
-//         let contract_file = Path::new(&env!("CARGO_MANIFEST_DIR"))
-//             .join("examples/contract.sol")
-//             .to_str()
-//             .unwrap()
-//             .to_string();
-//         let contract = contract_file.clone() + ":SimpleStorage";
-//         // let args = vec!["value".into()];
+// #[test]
+// fn test_add_contract_failed_with_wrong_path() {
+//     // given
+//     test_init();
+//     let mut cfg = restore_cfg().unwrap();
+//     let contract_file = Path::new(&env!("CARGO_MANIFEST_DIR"))
+//         .join("examples/contract.sol")
+//         .to_str()
+//         .unwrap()
+//         .to_string();
+//     let contract = contract_file.clone() + ":SimpleStorage";
+//     let args = vec!["value".into()];
 
-//         // when
-//         // cfg.add_contract(contract, args).unwrap();
-//         // assert_eq!(Err(eyre::eyre!("contract file not existed")), cfg.add_contract(contract, args));
+//     // when
+//     let status = cfg.add_contract(contract, args).unwrap();
+//     assert_eq!(status.is_err(), true);
 
-//         // then
-//         assert_eq!(cfg.contracts.len(), 0);
+//     // then
+//     assert_eq!(cfg.contracts.len(), 0);
 //     }
 
 //     #[test]

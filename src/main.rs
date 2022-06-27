@@ -1,9 +1,10 @@
+use morge::log_config;
 use morge::{args::cli, Executer};
 use std::{env, ffi::OsString};
-extern crate clap;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
+    log_config()?;
     let matches = cli().get_matches();
 
     match matches.subcommand() {
@@ -52,8 +53,10 @@ async fn main() -> eyre::Result<()> {
             executor.run().await?;
         }
         Some(("verify", sub_matches)) => {
-            let addr = sub_matches.value_of("rpc-url").expect("get addr failed");
-            println!("The addr is: {}", addr);
+            let chain = sub_matches.value_of("chain").expect("set rpc failed");
+            let tx = sub_matches.value_of("tx").expect("get addr failed");
+            println!("The chain is: {}, tx: {}", chain, tx);
+            Executer::verify_tx(chain, tx).await?;
         }
         Some(("list", _sub_matches)) => {
             println!("list the added contracts files");

@@ -26,7 +26,9 @@ dotenv = "0.15.0"
 dotenv_codegen = "0.15.0"
 
 # log
-tracing-error = "0.2.0"
-tracing-subscriber = { version = "0.3", features = ["registry", "env-filter", "fmt"] }
-tracing = "0.1.26"
+log = "0.4.17"
+env_logger = "0.8.4"
+log4rs = "1.1.1"
 
+# date and time lib
+chrono = "0.4"
