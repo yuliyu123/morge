@@ -13,7 +13,6 @@ use ethers::{
 };
 use eyre::{eyre, Result, WrapErr};
 use std::str::FromStr;
-use std::sync::Arc;
 use std::time::Duration;
 
 // copied from https://github.com/foundry-rs/foundry
