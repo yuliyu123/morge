@@ -2,3 +2,4 @@
 .morge
 .env
 Cargo.lock
+design.md

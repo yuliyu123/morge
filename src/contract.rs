@@ -1,3 +1,4 @@
+use core::panic;
 use ethers::{abi::Token, core::abi::Contract as Abi, prelude::*};
 use eyre::Result;
 use serde::{Deserialize, Serialize};
@@ -55,12 +56,7 @@ impl ContractInfo {
                 self.bytecode = bytecode;
                 Ok(())
             }
-            false => {
-                return Err(io::Error::new(
-                    io::ErrorKind::NotFound,
-                    "contract not found",
-                ));
-            }
+            false => panic!("Contract not found"),
         }
     }
 
@@ -74,7 +70,6 @@ impl ContractInfo {
         // Add arguments to constructor
         let args = parse_constructor_args(&abi.clone().constructor.unwrap(), &self.args)?;
 
-        // println!("args: {:?}", args);
         // deploy contract
         self.deploy(abi.clone(), bin.clone(), args, provider)
             .await?;
@@ -88,9 +83,6 @@ impl ContractInfo {
         args: Vec<Token>,
         provider: M,
     ) -> eyre::Result<()> {
-        // println!("deploying contract abi: {:?}", abi);
-        // println!("contract args {:?}", args);
-
         let provider = Arc::new(provider);
         let factory = ContractFactory::new(abi, bin, provider.clone());
 
@@ -105,7 +97,7 @@ impl ContractInfo {
 
         println!("Deployer: {deployer_address:?}");
         println!("Deployed to: {:?}", address);
-        println!("Transaction hash: {:?}", receipt.transaction_hash);
+        println!("Transaction hash: {:?}\n", receipt.transaction_hash);
 
         Ok(())
     }
@@ -114,6 +106,8 @@ impl ContractInfo {
 #[cfg(test)]
 mod tests {
     use ethers::utils::Anvil;
+    use std::time::Duration;
+    use tokio::time::timeout;
 
     use super::*;
 
@@ -137,6 +131,9 @@ mod tests {
         let client = get_provider(&anvil, "".to_string(), "".to_string()).await;
 
         // when
-        contract_info.run(client).await.unwrap();
+        // contract_info.run(client).await.unwrap();
+        timeout(Duration::from_millis(1000), contract_info.run(client))
+            .await
+            .unwrap();
     }
 }

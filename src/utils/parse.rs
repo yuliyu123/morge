@@ -83,7 +83,6 @@ pub fn get_from_private_key(private_key: &str) -> Result<LocalWallet> {
     LocalWallet::from_str(privk).map_err(|x| eyre!("Failed to create wallet from private key: {x}"))
 }
 
-// ) -> Arc<SignerMiddleware<Arc<Provider<RetryClient<Http>>>, Wallet<SigningKey>>> {
 pub async fn get_provider(
     anvil: &AnvilInstance,
     rpc_url: String,

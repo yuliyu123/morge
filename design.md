@@ -29,3 +29,7 @@ cargo run -- remove -c examples/contract.sol:SimpleStorage
 cargo run -- deploy
 cargo run -- clean
 cargo run -- verify -c rinkeby -t 0xc6e08d3b5b1077f4662907fa547fab34bac033a0501655aca0b903057c118da8
+
+
+build: cargo build
+test: cargo test -- --test-threads=1

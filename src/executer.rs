@@ -20,6 +20,7 @@ impl Executer {
 
     pub fn init() -> eyre::Result<()> {
         save(&Config::new())?;
+        println!("Init config file success");
         Ok(())
     }
 
@@ -52,6 +53,7 @@ impl Executer {
     pub fn clean() -> eyre::Result<()> {
         let mut cfg = restore_cfg()?;
         cfg.clean()?;
+        println!("Clean deployed contracts cache success");
         Ok(())
     }
 
@@ -60,6 +62,7 @@ impl Executer {
         self.set_config(cfg);
         match !self.cfg.contracts.is_empty() {
             true => {
+                // TODO: optimize memory
                 let anvil = &Anvil::new().spawn();
                 let provider = get_provider(
                     anvil,
@@ -71,22 +74,25 @@ impl Executer {
 
                 for mut contract in self.cfg.contracts {
                     contract.run(provider.clone()).await?;
+                    println!("Deploy contract: {} success", contract.contract);
                 }
+                println!("Deploy contracts success");
                 return Ok(());
             }
-            false => return Err(eyre::eyre!("no contract to run")),
+            false => panic!("No contract to deploy"),
         }
     }
 
-    pub async fn verify_tx(chain: &str, tx: &str) -> eyre::Result<()> {
-        Verify::verify_tx(chain, tx).await?;
-        Ok(())
+    pub async fn verify_tx(chain: &str, tx: &str) -> eyre::Result<bool> {
+        return Ok(Verify::verify_tx(chain, tx).await?);
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::Duration;
+    use tokio::time::timeout;
 
     mod util {
         use std::{fs, u8};
@@ -116,7 +122,6 @@ mod tests {
         }
 
         #[test]
-        #[ignore]
         pub fn test_create_sol_files() {
             create_sol_files(100).unwrap();
             delete_sol_files(100).unwrap();
@@ -125,10 +130,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_batch_contracts_run_success() {
-        // util::delete_sol_files().unwrap();
+        let num: u8 = 100;
+        util::delete_sol_files(num).unwrap();
         // Executer::clean().unwrap();
         // given
-        util::create_sol_files(100).unwrap();
+        util::create_sol_files(num).unwrap();
 
         // changed to local anvil rpc
         let mut cfg = Config {
@@ -137,7 +143,6 @@ mod tests {
             contracts: vec![],
         };
 
-        let num: u8 = 100;
         for i in 0..num {
             let contract =
                 String::new() + "examples/contract" + &i.to_string() + ".sol:SimpleStorage";
@@ -148,7 +153,9 @@ mod tests {
         // when
         let mut executer = Executer::new();
         executer.set_config(cfg.clone());
-        executer.run().await.unwrap();
+        timeout(Duration::from_millis(10000), executer.run())
+            .await
+            .unwrap();
 
         // then clean
         util::delete_sol_files(num).unwrap();

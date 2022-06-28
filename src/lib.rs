@@ -9,9 +9,9 @@ mod utils;
 use chrono::Local;
 pub use executer::Executer;
 
-#[macro_use]
-extern crate dotenv_codegen;
+// #[macro_use]
 extern crate clap;
+extern crate dotenv_codegen;
 extern crate log;
 extern crate log4rs;
 

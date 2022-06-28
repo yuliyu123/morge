@@ -1,4 +1,4 @@
-use log::{debug, error, info, warn};
+use core::panic;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
 use std::fs;
@@ -55,7 +55,7 @@ impl Config {
         self.rpc_url = Some(rpc_url);
         self.pri_key = Some(pri_key);
         save(self)?;
-        println!("set rpc url and private key success");
+        println!("Set rpc url and private key success");
         Ok(())
     }
 
@@ -63,7 +63,7 @@ impl Config {
     pub fn add_contract(&mut self, contract: String, args: Vec<String>) -> eyre::Result<()> {
         match is_contract_existed(contract.clone()) {
             true => {
-                let contract_info = ContractInfo::new(contract.clone(), args);
+                let contract_info = ContractInfo::new(contract.clone(), args.clone());
                 if self
                     .contracts
                     .iter()
@@ -73,14 +73,15 @@ impl Config {
                     })
                     .any(|x| x)
                 {
-                    warn!("contract {} already existed", contract);
+                    println!("contract {} already existed", contract);
                     return Ok(());
                 };
                 self.contracts.push(contract_info);
                 save(self)?;
+                println!("Add contract {} and args: {:?} success", contract, args);
                 Ok(())
             }
-            false => Err(eyre::eyre!("contract not found")),
+            false => panic!("contract not found"),
         }
     }
 
@@ -98,40 +99,37 @@ impl Config {
                     })
                     .any(|x| x)
                 {
-                    return Err(eyre::eyre!("contract not exists"));
+                    panic!("contract not exists");
                 };
 
-                // todo: add ut to cover
-                println!("contract info: {:?}", contract_info);
                 self.contracts.retain(|item| {
-                    println!("item info: {:?}", item);
-                    item.contract != contract_info.contract && item.name != contract_info.name
+                    !(item.contract == contract_info.contract && item.name == contract_info.name)
                 });
                 save(self)?;
-                println!("remove contract: {} success", contract);
+                println!("Remove contract: {} success", contract);
                 Ok(())
             }
-            false => Err(eyre::eyre!("contract not found")),
+            false => panic!("contract not found"),
         }
     }
 
     pub fn list() {
         let cfg_path = Path::new(INIT_CFG);
         if !cfg_path.exists() {
-            println!("cfg file not existed");
+            println!("Cfg file not existed");
         }
 
         let json = std::fs::read_to_string(INIT_CFG).unwrap();
         let contract_infos = from_json(&json).unwrap().contracts;
 
         if contract_infos.is_empty() {
-            println!("no solidity path");
+            println!("Sol file not found, please check");
         }
 
         for contract_info in contract_infos.iter() {
-            println!("contract name: {:?}", contract_info.name);
-            println!("contract contract: {:?}", contract_info.contract);
-            println!("contract args: {:?}", contract_info.args);
+            println!("Contract name: {:?}", contract_info.name);
+            println!("Contract contract: {:?}", contract_info.contract);
+            println!("Contract args: {:?} \n", contract_info.args);
         }
     }
 
@@ -144,107 +142,157 @@ impl Config {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
+#[cfg(test)]
+mod tests {
 
-//     use super::*;
+    use super::*;
 
-//     #[test]
-//     fn test_init() {
-//         // given
-//         let mut cfg = Config::new();
-//         cfg.clean().unwrap();
-//         let rpc_url = "http://localhost:8545";
-//         let pri_key = "0x1234567890123456789012345678901234567890123456789012345678901234";
+    fn setup() {
+        // given
+        let mut cfg = Config::new();
+        let rpc_url = "http://localhost:8545";
+        let pri_key = "0x1234567890123456789012345678901234567890123456789012345678901234";
 
-//         // when
-//         cfg.set_rpc_and_key(rpc_url.into(), pri_key.into()).unwrap();
-//         save(&cfg).unwrap();
+        // when
+        cfg.set_rpc_and_key(rpc_url.into(), pri_key.into()).unwrap();
+        save(&cfg).unwrap();
 
-//         // then
-//         assert!(Path::new(INIT_CFG).exists());
-//         let mut cfg = restore_cfg().unwrap();
-//         assert_eq!(cfg.rpc_url, Some(rpc_url.into()));
-//         assert_eq!(cfg.pri_key, Some(pri_key.into()));
-//         assert_eq!(cfg.contracts, vec![]);
-//     }
+        // then
+        assert!(Path::new(INIT_CFG).exists());
+        let cfg = restore_cfg().unwrap();
+        assert_eq!(cfg.rpc_url, Some(rpc_url.into()));
+        assert_eq!(cfg.pri_key, Some(pri_key.into()));
+        assert_eq!(cfg.contracts, vec![]);
+    }
 
-//     #[test]
-//     fn test_add_contract_success() {
-//         // given
-//         test_init();
-//         let mut cfg = restore_cfg().unwrap();
-//         let contract_file = Path::new(&env!("CARGO_MANIFEST_DIR"))
-//             .join("examples/contract.sol")
-//             .to_str()
-//             .unwrap()
-//             .to_string();
-//         let contract = contract_file.clone();
-//         let args = vec!["value".into()];
+    fn teardown() {
+        let mut cfg = restore_cfg().unwrap();
+        cfg.clean().unwrap();
+        let cfg = restore_cfg().unwrap();
+        assert_eq!(cfg.contracts.len(), 0);
+    }
 
-//         // when
-//         cfg.add_contract(contract.clone(), args).unwrap();
+    #[test]
+    fn test_init() {
+        setup();
+        teardown();
+    }
 
-//         // then
-//         assert_eq!(cfg.contracts.len(), 1);
-//         assert_eq!(cfg.contracts[0].contract, contract);
-//     }
+    #[test]
+    fn test_add_contract_success() {
+        // given
+        setup();
+        let mut cfg = restore_cfg().unwrap();
+        let contract_file = Path::new(&env!("CARGO_MANIFEST_DIR"))
+            .join("examples/contract.sol:SimpleStorage")
+            .to_str()
+            .unwrap()
+            .to_string();
+        let args = vec!["value".into()];
 
-// #[test]
-// fn test_add_contract_failed_with_wrong_path() {
-//     // given
-//     test_init();
-//     let mut cfg = restore_cfg().unwrap();
-//     let contract_file = Path::new(&env!("CARGO_MANIFEST_DIR"))
-//         .join("examples/contract.sol")
-//         .to_str()
-//         .unwrap()
-//         .to_string();
-//     let contract = contract_file.clone() + ":SimpleStorage";
-//     let args = vec!["value".into()];
+        // when
+        cfg.add_contract(contract_file.clone(), args).unwrap();
 
-//     // when
-//     let status = cfg.add_contract(contract, args).unwrap();
-//     assert_eq!(status.is_err(), true);
+        // then
+        assert_eq!(cfg.contracts.len(), 1);
+        assert_eq!(
+            cfg.contracts[0].contract,
+            Path::new(&env!("CARGO_MANIFEST_DIR"))
+                .join("examples/contract.sol")
+                .to_str()
+                .unwrap()
+                .to_string()
+        );
+        teardown();
+    }
 
-//     // then
-//     assert_eq!(cfg.contracts.len(), 0);
-//     }
+    #[test]
+    #[should_panic]
+    fn test_add_contract_failed_with_wrong_path() {
+        // given
+        test_init();
+        let mut cfg = restore_cfg().unwrap();
+        let contract_file = Path::new(&env!("CARGO_MANIFEST_DIR"))
+            .join("examples/contract.sol")
+            .to_str()
+            .unwrap()
+            .to_string();
+        let args = vec!["value".into()];
 
-//     #[test]
-//     fn test_remove_contract_success() {
-//         // given
-//         test_add_contract_success();
-//         let mut cfg = restore_cfg().unwrap();
-//         let contract_file = Path::new(&env!("CARGO_MANIFEST_DIR"))
-//             .join("examples/contract.sol")
-//             .to_str()
-//             .unwrap()
-//             .to_string();
-//         let contract = contract_file.clone() + ":SimpleStorage";
-//         assert_eq!(cfg.contracts.len(), 1);
-//         assert_eq!(cfg.contracts[0].contract, contract);
+        // when
+        // should panic
+        cfg.add_contract(contract_file.clone(), args).unwrap();
+    }
 
-//         // when
-//         cfg.remove_contract(contract.clone()).unwrap();
+    #[test]
+    fn test_remove_contract_success() {
+        // given
+        setup();
+        let mut cfg = restore_cfg().unwrap();
 
-//         // then
-//         assert_eq!(cfg.contracts.len(), 0);
-//     }
+        let contract_01 = Path::new(&env!("CARGO_MANIFEST_DIR"))
+            .join("examples/contract.sol:SimpleStorage_01")
+            .to_str()
+            .unwrap()
+            .to_string();
+        let args = vec!["value".into()];
+        cfg.add_contract(contract_01.clone(), args).unwrap();
 
-//     #[test]
-//     fn test_clean() {
-//         // given
-//         test_add_contract_success();
-//         let mut cfg = restore_cfg().unwrap();
-//         assert_eq!(cfg.contracts.len(), 1);
+        let contract_02 = Path::new(&env!("CARGO_MANIFEST_DIR"))
+            .join("examples/contract.sol:SimpleStorage_02")
+            .to_str()
+            .unwrap()
+            .to_string();
+        let args = vec!["value".into()];
+        cfg.add_contract(contract_02.clone(), args).unwrap();
+        assert_eq!(cfg.contracts.len(), 2);
 
-//         // when
-//         cfg.clean().unwrap();
+        // when
+        let contract_file = Path::new(&env!("CARGO_MANIFEST_DIR"))
+            .join("examples/contract.sol:SimpleStorage_01")
+            .to_str()
+            .unwrap()
+            .to_string();
+        cfg.remove_contract(contract_file.clone()).unwrap();
 
-//         // then
-//         assert_eq!(cfg.contracts.len(), 0);
-//         let cfg = restore_cfg().unwrap();
-//         assert_eq!(cfg.contracts.len(), 0);
-//     }
-// }
+        // then
+        assert_eq!(cfg.contracts.len(), 1);
+        assert_eq!(cfg.contracts[0].name, "SimpleStorage_02");
+        teardown();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_remove_contract_failed_with_wrong_path() {
+        // given
+        setup();
+        let mut cfg = restore_cfg().unwrap();
+        let contract_file = Path::new(&env!("CARGO_MANIFEST_DIR"))
+            .join("examples/contract.sol:SimpleStorage")
+            .to_str()
+            .unwrap()
+            .to_string();
+        let args = vec!["value".into()];
+        cfg.add_contract(contract_file.clone(), args).unwrap();
+        assert_eq!(cfg.contracts.len(), 1);
+        assert_eq!(
+            cfg.contracts[0].contract,
+            Path::new(&env!("CARGO_MANIFEST_DIR"))
+                .join("examples/contract.sol")
+                .to_str()
+                .unwrap()
+                .to_string()
+        );
+
+        // when
+        let contract_file = Path::new(&env!("CARGO_MANIFEST_DIR"))
+            .join("examples/contract.sol")
+            .to_str()
+            .unwrap()
+            .to_string();
+        cfg.remove_contract(contract_file.clone()).unwrap();
+
+        // then
+        assert_eq!(cfg.contracts.len(), 0);
+    }
+}
