@@ -13,11 +13,9 @@ cargo install --git https://github.com/yuliyu123/morge
 
 
 # Usage
-Initialize morge to create config file under .morge directory:
+Initialize morge to create config file under .morge directory: `morge init`
 
-`morge init`
-
-Set rpc url and private key:
+Set rpc url and private key: 
 
 `morge set --rpc-url $RPC_URL --private-key $PRI_KEY`
 
@@ -45,21 +43,13 @@ Verify transaction execution status by specify chainnet and transaction hash:
 
 `morge verify -c rinkeby -t 0xc6e08d3b5b1077f4662907fa547fab34bac033a0501655aca0b903057c118da8`
 
-# Contributing
-First of all, thanks for contributing to this project! This project adheres to the [Rust Code of Conduct](https://github.com/rust-lang/rust/blob/master/CODE_OF_CONDUCT.md). This code of conduct describes the minimum behavior expected from all contributors. All kinds of issues, features and PR is welcome.
-
 ## Build & Test
 build: `cargo build`
 
 test: `cargo test -- --test-threads=1`
 
-# Todo
-Memory optimization
+support chainnet till now:
 
-Log optimization
+`ethernum、goerli、celo、kovan、rinkeby、ropsten、polygon、polygon-mumbai、fantom、fantom-testnet、bsc、bsc-testnet`
 
-Multi-threads async deploy contracts
-
-Improving tests coverage
-
-Calling deployed contract method
+All kinds of issues, features and PR is welcome to contribute, thanks.

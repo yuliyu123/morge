@@ -52,7 +52,7 @@ async fn main() -> eyre::Result<()> {
             let chain = sub_matches.value_of("chain").expect("set rpc failed");
             let tx = sub_matches.value_of("tx").expect("get addr failed");
             println!("Chain: {}, tx: {}", chain, tx);
-            Executer::verify_tx(chain, tx).await?;
+            Executer::verify_tx(chain, tx).await;
         }
         Some(("list", _sub_matches)) => {
             println!("List added contracts files");

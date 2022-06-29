@@ -83,8 +83,8 @@ impl Executer {
         }
     }
 
-    pub async fn verify_tx(chain: &str, tx: &str) -> eyre::Result<bool> {
-        return Ok(Verify::verify_tx(chain, tx).await?);
+    pub async fn verify_tx(chain: &str, tx: &str) -> bool {
+        Verify::verify_tx(chain, tx).await.unwrap()
     }
 }
 

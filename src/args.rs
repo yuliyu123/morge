@@ -73,14 +73,8 @@ pub fn cli() -> Command<'static> {
                         .short('t')
                         .long("tx")
                         .takes_value(true)
-                        .help("provide the transaction hash"),
-                )
-                .arg(
-                    Arg::with_name("private-key")
-                        .short('k')
-                        .long("private-key")
-                        .takes_value(true)
-                        .help("set private key"),
+                        .help("provide the transaction hash, currently support eth、goerli、celo、kovan、rinkeby、ropsten、
+                            polygon、polygon-mumbai、fantom、fantom-testnet、bsc、bsc-testnet chain"),
                 )
                 .arg_required_else_help(true),
         )

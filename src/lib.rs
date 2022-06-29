@@ -2,18 +2,23 @@ pub mod args;
 pub mod config;
 pub mod contract;
 pub mod verify;
+use std::collections::HashMap;
+
 pub use config::*;
 
 mod executer;
 mod utils;
 use chrono::Local;
+use ethers::prelude::Chain;
 pub use executer::Executer;
 
-// #[macro_use]
 extern crate clap;
 extern crate dotenv_codegen;
 extern crate log;
 extern crate log4rs;
+
+#[macro_use(lazy_static)]
+extern crate lazy_static;
 
 use log::LevelFilter;
 use log4rs::append::file::FileAppender;
@@ -22,10 +27,44 @@ use log4rs::encode::pattern::PatternEncoder;
 
 static INIT_PATH: &str = ".morge";
 static INIT_CFG: &str = ".morge/config.json";
+static MAINNET_KEY: &str = "YRFQ5PZHZ888THDP27H4B671QYW5X4BBTU";
 
-pub enum Err {
-    CompileError(String),
-    DeployError(String),
+lazy_static! {
+    static ref CHAINS_MAP: HashMap<&'static str, Chain> = {
+        let mut chains_map = HashMap::new();
+        chains_map.insert("eth", Chain::Mainnet);
+        chains_map.insert("ropsten", Chain::Ropsten);
+        chains_map.insert("rinkeby", Chain::Rinkeby);
+        chains_map.insert("kovan", Chain::Kovan);
+        chains_map.insert("goerli", Chain::Goerli);
+
+        // Todo: different api key for different chain, update later
+        // chains_map.insert("polygon", Chain::Polygon);
+        // chains_map.insert("polygon-mumbai", Chain::PolygonMumbai);
+        // chains_map.insert("fantom", Chain::Fantom);
+        // chains_map.insert("fantom-testnet", Chain::FantomTestnet);
+        // chains_map.insert("bsc", Chain::BinanceSmartChain);
+        // chains_map.insert("bsc-testnet", Chain::BinanceSmartChainTestnet);
+        chains_map
+    };
+
+    static ref KEYS_MAP: HashMap<&'static str, &'static str> = {
+        let mut keys_map = HashMap::new();
+        keys_map.insert("eth", MAINNET_KEY);
+        keys_map.insert("ropsten",MAINNET_KEY);
+        keys_map.insert("rinkeby", MAINNET_KEY);
+        keys_map.insert("kovan", MAINNET_KEY);
+        keys_map.insert("goerli", MAINNET_KEY);
+
+        // Todo: different api key for different chain, update later
+        // keys_map.insert("polygon", MAINNET_KEY);
+        // keys_map.insert("polygon-mumbai", MAINNET_KEY);
+        // keys_map.insert("fantom", MAINNET_KEY);
+        // keys_map.insert("fantom-testnet", MAINNET_KEY);
+        // keys_map.insert("bsc", MAINNET_KEY);
+        // keys_map.insert("bsc-testnet", MAINNET_KEY);
+        keys_map
+    };
 }
 
 pub fn log_config() -> eyre::Result<()> {

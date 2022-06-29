@@ -1,33 +1,21 @@
 use core::panic;
 use ethers::prelude::*;
-use std::collections::HashMap;
+
+use crate::{CHAINS_MAP, KEYS_MAP};
 
 pub struct Verify;
 
 impl Verify {
     fn get_chainnet(chain: &str) -> Chain {
-        let mut chains_map = HashMap::new();
-        chains_map.insert("eth", Chain::Mainnet);
-        chains_map.insert("ropsten", Chain::Ropsten);
-        chains_map.insert("rinkeby", Chain::Rinkeby);
-        chains_map.insert("kovan", Chain::Kovan);
-        chains_map.insert("goerli", Chain::Goerli);
-        match chains_map.contains_key(chain) {
-            true => chains_map.get(chain).unwrap().clone(),
+        match CHAINS_MAP.contains_key(chain) {
+            true => CHAINS_MAP.get(chain).unwrap().clone(),
             false => Chain::Mainnet,
         }
     }
 
     fn get_api_key(chain: &str) -> &str {
-        let key = "YRFQ5PZHZ888THDP27H4B671QYW5X4BBTU";
-        let mut keys_map = HashMap::new();
-        keys_map.insert("eth", key);
-        keys_map.insert("rinkeby", key);
-        keys_map.insert("kovan", key);
-        keys_map.insert("ropsten", key);
-        keys_map.insert("goerli", key);
-        match keys_map.contains_key(chain) {
-            true => keys_map.get(chain).unwrap().clone(),
+        match KEYS_MAP.contains_key(chain) {
+            true => KEYS_MAP.get(chain).unwrap().clone(),
             false => panic!("{} chain api key not found", chain),
         }
     }
@@ -39,7 +27,10 @@ impl Verify {
 
         let status = client.check_contract_execution_status(tx).await;
         match status {
-            Ok(_) => Ok(true),
+            Ok(_) => {
+                println!("Verify tx: {} status success", tx);
+                return Ok(true);
+            }
             Err(err) => panic!("Verify tx: {} failed, err: {:?}", tx, err),
         }
     }
@@ -47,13 +38,19 @@ impl Verify {
 
 #[tokio::test]
 #[ignore = "maybe failed due to China gov firewall"]
-async fn test_verify() -> eyre::Result<()> {
-    // verify(Chain::Mainnet, "I5BXNZYP5GEDWFINGVEZKYIVU2695NPQZB".to_string(), "0x20838f43529f3fe0658eef6d2ded1184df317ed816c61beb70d38a6a02372852".into()).await?;
+async fn test_verify_success() {
     let res = Verify::verify_tx(
         "rinkeby",
         "0xc6e08d3b5b1077f4662907fa547fab34bac033a0501655aca0b903057c118da8",
     )
-    .await?;
+    .await
+    .unwrap();
     assert!(res);
-    Ok(())
+}
+
+#[tokio::test]
+#[should_panic]
+// #[ignore = "maybe failed due to China gov firewall"]
+async fn test_verify_failed() {
+    Verify::verify_tx("rinkeby", "0xxxxxxxxxx").await.unwrap();
 }
