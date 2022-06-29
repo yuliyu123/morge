@@ -1,10 +1,10 @@
-use morge::log_config;
+// use morge::log_config;
 use morge::{args::cli, Executer};
 use std::{env, ffi::OsString};
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
-    log_config()?;
+    // log_config()?;
     let matches = cli().get_matches();
 
     match matches.subcommand() {

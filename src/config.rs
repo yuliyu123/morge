@@ -119,14 +119,21 @@ impl Config {
             println!("Cfg file not existed");
         }
 
-        let json = std::fs::read_to_string(INIT_CFG).unwrap();
-        let contract_infos = from_json(&json).unwrap().contracts;
-
-        if contract_infos.is_empty() {
-            println!("Sol file not found, please check");
+        let cfg = restore_cfg().unwrap();
+        if cfg.rpc_url == None {
+            println!("Rpc url not set");
         }
 
-        for contract_info in contract_infos.iter() {
+        if cfg.pri_key == None {
+            println!("Private key not set");
+        }
+
+        let contracts = cfg.contracts;
+        if contracts.is_empty() {
+            println!("Has no contract file to deploy.");
+        }
+
+        for contract_info in contracts.iter() {
             println!("Contract name: {:?}", contract_info.name);
             println!("Contract contract: {:?}", contract_info.contract);
             println!("Contract args: {:?} \n", contract_info.args);
