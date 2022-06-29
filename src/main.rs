@@ -55,7 +55,7 @@ async fn main() -> eyre::Result<()> {
             Executer::verify_tx(chain, tx).await;
         }
         Some(("list", _sub_matches)) => {
-            println!("List added contracts files");
+            println!("Start list configuration");
             Executer::list();
         }
         Some(("clean", _sub_matches)) => {
