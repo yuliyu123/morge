@@ -31,26 +31,83 @@ impl Verify {
                 println!("Verify tx: {} status success", tx);
                 return Ok(true);
             }
-            Err(err) => panic!("Verify tx: {} failed, err: {:?}", tx, err),
+            Err(err) => {
+                println!("Verify tx: {} failed, err: {:?}", tx, err);
+                Ok(false)
+            }
         }
     }
 }
 
-#[tokio::test]
-#[ignore = "maybe failed due to China gov firewall"]
-async fn test_verify_success() {
-    let res = Verify::verify_tx(
-        "rinkeby",
-        "0xc6e08d3b5b1077f4662907fa547fab34bac033a0501655aca0b903057c118da8",
-    )
-    .await
-    .unwrap();
-    assert!(res);
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{
+        future::Future,
+        time::{Duration, SystemTime},
+    };
 
-#[tokio::test]
-#[should_panic]
-// #[ignore = "maybe failed due to China gov firewall"]
-async fn test_verify_failed() {
-    Verify::verify_tx("rinkeby", "0xxxxxxxxxx").await.unwrap();
+    pub async fn run_at_least_duration(duration: Duration, block: impl Future) {
+        let start = SystemTime::now();
+        block.await;
+        if let Some(sleep) = duration.checked_sub(start.elapsed().unwrap()) {
+            tokio::time::sleep(sleep).await;
+        }
+    }
+
+    #[tokio::test]
+    #[ignore = "maybe failed due to China gov firewall"]
+    async fn test_rinkeby_verify() {
+        let chain = "rinkeby";
+        let existed_tx = "0xc6e08d3b5b1077f4662907fa547fab34bac033a0501655aca0b903057c118da8";
+        let res = Verify::verify_tx(chain, existed_tx).await.unwrap();
+        assert!(res);
+
+        let not_existed_tx = "0xabcabcababcabcababcabcababcabcababcabcababcabcababcabcababcabcab";
+        let res = Verify::verify_tx(chain, not_existed_tx).await.unwrap();
+        assert!(!res)
+    }
+
+    #[tokio::test]
+    #[ignore = "maybe failed due to China gov firewall"]
+    async fn test_fantom_verify() {
+        run_at_least_duration(Duration::from_millis(250), async {
+            let chain = "fantom";
+            let existed_tx = "0xb4b8b03c36ff4d6668c7aab2c78a4936b3ac79dda5e07cf7e509c01680fea443";
+            let res = Verify::verify_tx(chain, existed_tx).await.unwrap();
+            assert!(res);
+
+            let not_existed_tx =
+                "0xabcabcababcabcababcabcababcabcababcabcababcabcababcabcababcabcab";
+            let res = Verify::verify_tx(chain, not_existed_tx).await.unwrap();
+            assert!(!res);
+        })
+        .await
+    }
+
+    #[tokio::test]
+    #[ignore = "maybe failed due to China gov firewall"]
+    async fn test_polygon_verify() {
+        let chain = "polygon";
+        let existed_tx = "0x803aa2410fb9976c432e5390728798c98a8b4dda4ef694e7dab79f25cdffcdd6";
+        let res = Verify::verify_tx(chain, existed_tx).await.unwrap();
+        assert!(res);
+
+        let not_existed_tx = "0xabcabcababcabcababcabcababcabcababcabcababcabcababcabcababcabcab";
+        let res = Verify::verify_tx(chain, not_existed_tx).await.unwrap();
+        assert!(!res)
+    }
+
+    #[tokio::test]
+    #[ignore = "maybe failed due to China gov firewall"]
+    async fn test_bsc_verify() {
+        let chain = "bsc";
+        let existed_tx = "0x98821751920196f1c5919635b7c371af7adfac2c6f7be2d832aae39f303b2406";
+        let res = Verify::verify_tx(chain, existed_tx).await.unwrap();
+        assert!(res);
+
+        let not_existed_tx = "0xabcabcababcabcababcabcababcabcababcabcababcabcababcabcababcabcab";
+        let res = Verify::verify_tx(chain, not_existed_tx).await.unwrap();
+        assert!(!res)
+    }
 }

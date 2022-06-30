@@ -53,7 +53,7 @@ impl Executer {
     pub fn clean() -> eyre::Result<()> {
         let mut cfg = restore_cfg()?;
         cfg.clean()?;
-        println!("Clean deployed contracts cache success");
+        println!("Clean configuration file success");
         Ok(())
     }
 
@@ -79,7 +79,10 @@ impl Executer {
                 println!("Deploy contracts success");
                 return Ok(());
             }
-            false => panic!("No contract to deploy"),
+            false => {
+                println!("No contract to deploy");
+                Ok(())
+            }
         }
     }
 

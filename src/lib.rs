@@ -28,6 +28,9 @@ use log4rs::encode::pattern::PatternEncoder;
 static INIT_PATH: &str = ".morge";
 static INIT_CFG: &str = ".morge/config.json";
 static MAINNET_KEY: &str = "YRFQ5PZHZ888THDP27H4B671QYW5X4BBTU";
+static POLYGON_KEY: &str = "ERXCC9XEMMSSBN7NUAW889MIGEAAXA2MJJ";
+static FANTOM_KEY: &str = "YKFZMKCUR78W2QDRJ38V4XXB43Q58GZK1T";
+static BSC_KEY: &str = "YYGABQAHU3FICXGNI8IJ823DAAZ4TZZHEH";
 
 lazy_static! {
     static ref CHAINS_MAP: HashMap<&'static str, Chain> = {
@@ -37,32 +40,27 @@ lazy_static! {
         chains_map.insert("rinkeby", Chain::Rinkeby);
         chains_map.insert("kovan", Chain::Kovan);
         chains_map.insert("goerli", Chain::Goerli);
-
-        // Todo: different api key for different chain, update later
-        // chains_map.insert("polygon", Chain::Polygon);
-        // chains_map.insert("polygon-mumbai", Chain::PolygonMumbai);
-        // chains_map.insert("fantom", Chain::Fantom);
-        // chains_map.insert("fantom-testnet", Chain::FantomTestnet);
-        // chains_map.insert("bsc", Chain::BinanceSmartChain);
-        // chains_map.insert("bsc-testnet", Chain::BinanceSmartChainTestnet);
+        chains_map.insert("polygon", Chain::Polygon);
+        chains_map.insert("polygon-mumbai", Chain::PolygonMumbai);
+        chains_map.insert("fantom", Chain::Fantom);
+        chains_map.insert("fantom-testnet", Chain::FantomTestnet);
+        chains_map.insert("bsc", Chain::BinanceSmartChain);
+        chains_map.insert("bsc-testnet", Chain::BinanceSmartChainTestnet);
         chains_map
     };
-
     static ref KEYS_MAP: HashMap<&'static str, &'static str> = {
         let mut keys_map = HashMap::new();
         keys_map.insert("eth", MAINNET_KEY);
-        keys_map.insert("ropsten",MAINNET_KEY);
+        keys_map.insert("ropsten", MAINNET_KEY);
         keys_map.insert("rinkeby", MAINNET_KEY);
         keys_map.insert("kovan", MAINNET_KEY);
         keys_map.insert("goerli", MAINNET_KEY);
-
-        // Todo: different api key for different chain, update later
-        // keys_map.insert("polygon", MAINNET_KEY);
-        // keys_map.insert("polygon-mumbai", MAINNET_KEY);
-        // keys_map.insert("fantom", MAINNET_KEY);
-        // keys_map.insert("fantom-testnet", MAINNET_KEY);
-        // keys_map.insert("bsc", MAINNET_KEY);
-        // keys_map.insert("bsc-testnet", MAINNET_KEY);
+        keys_map.insert("polygon", POLYGON_KEY);
+        keys_map.insert("polygon-mumbai", POLYGON_KEY);
+        keys_map.insert("fantom", FANTOM_KEY);
+        keys_map.insert("fantom-testnet", FANTOM_KEY);
+        keys_map.insert("bsc", BSC_KEY);
+        keys_map.insert("bsc-testnet", BSC_KEY);
         keys_map
     };
 }

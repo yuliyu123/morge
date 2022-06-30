@@ -22,13 +22,13 @@ impl ContractInfo {
     pub fn new(contract: String, args: Vec<String>) -> Self {
         let contract_vec = contract.split(":").collect::<Vec<&str>>();
         if contract_vec.len() != 2 {
-            panic!("invalid contract format: {}", contract);
+            panic!("Invalid contract format: {}", contract);
         }
 
         let sol_file = contract_vec[0];
         if !Path::new(sol_file).exists() || !sol_file.ends_with(".sol") {
-            panic!(
-                "contract {} not exists or is't sol file, pls check, sweet~~~",
+            println!(
+                "Contract {} not exists or isn't sol file, pls check, sweet~~~",
                 contract
             );
         }
@@ -56,7 +56,10 @@ impl ContractInfo {
                 self.bytecode = bytecode;
                 Ok(())
             }
-            false => panic!("Contract not found"),
+            false => {
+                println!("Contract {} not found", self.contract);
+                Ok(())
+            }
         }
     }
 
@@ -122,7 +125,7 @@ mod tests {
             bytecode: Bytes::default(),
         };
 
-        // use production env here
+        // use dev env here
         // let client = get_provider(&anvil, dotenv!("RPC_URL").to_string(), dotenv!("PRI_KEY").to_string()).await;
 
         // need declare here to guarantee anvil's lifetime

@@ -1,4 +1,3 @@
-use core::panic;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
 use std::fs;
@@ -73,7 +72,7 @@ impl Config {
                     })
                     .any(|x| x)
                 {
-                    println!("contract {} already existed", contract);
+                    println!("Contract {} already existed", contract);
                     return Ok(());
                 };
                 self.contracts.push(contract_info);
@@ -81,7 +80,10 @@ impl Config {
                 println!("Add contract {} and args: {:?} success", contract, args);
                 Ok(())
             }
-            false => panic!("contract not found"),
+            false => {
+                println!("Contract {} not found", contract);
+                Ok(())
+            }
         }
     }
 
@@ -99,7 +101,8 @@ impl Config {
                     })
                     .any(|x| x)
                 {
-                    panic!("contract not exists");
+                    println!("Contract {} not exists", contract);
+                    return Ok(());
                 };
 
                 self.contracts.retain(|item| {
@@ -109,28 +112,35 @@ impl Config {
                 println!("Remove contract: {} success", contract);
                 Ok(())
             }
-            false => panic!("contract not found"),
+            false => {
+                println!("Contract {} not found", contract);
+                Ok(())
+            }
         }
     }
 
     pub fn list() {
         let cfg_path = Path::new(INIT_CFG);
         if !cfg_path.exists() {
-            println!("Cfg file not existed");
+            println!("Configuration file not existed");
+            return;
         }
 
         let cfg = restore_cfg().unwrap();
-        if cfg.rpc_url == None {
-            println!("Rpc url not set");
+        if cfg.rpc_url.is_none() {
+            println!("Rpc url not set, please set");
+            return;
         }
 
-        if cfg.pri_key == None {
-            println!("Private key not set");
+        if cfg.pri_key.is_none() {
+            println!("Private key not set, please set");
+            return;
         }
 
         let contracts = cfg.contracts;
         if contracts.is_empty() {
-            println!("Has no contract file to deploy.");
+            println!("Have no any contract file to deploy.");
+            return;
         }
 
         for contract_info in contracts.iter() {

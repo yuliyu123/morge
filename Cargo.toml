@@ -12,7 +12,7 @@ description = """
 
 [dependencies]
 # network & async libs
-ethers = "0.13.0"
+ethers = { version = "0.13.0", features = ["legacy"] }
 tokio = { version = "1.19.2", features = ["full"] }
 futures = { version = "0.3.0", features = ["thread-pool"]}
 
