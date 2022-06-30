@@ -1,8 +1,20 @@
 # 描述
 一个批量solidity合约执行工具，rust实现。支持以太坊、celo和其他evm兼容链。
 
+# 依赖条件
+运行和测试该项目需要以下依赖：
+
+`solc` (>=0.8.10)
+
+`anvil`
+
+`geth`
+
 # 安装
 `cargo install morge`
+
+## 从源代码安装
+`cargo install --git https://github.com/yuliyu123/morge`
 
 # 用法
 初始化：`morge init`。

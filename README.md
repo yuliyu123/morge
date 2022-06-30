@@ -19,7 +19,7 @@ Run the following command directly to install from crates.io.
 
 ## Installing from Source
 
-cargo install --git https://github.com/yuliyu123/morge
+`cargo install --git https://github.com/yuliyu123/morge`
 
 
 # Usage

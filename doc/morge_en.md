@@ -2,6 +2,16 @@
 # Description
 A batch of solidity contracts deployment tool developed by rust, support Ethereum and Celo and other evm-compatible chains.
 
+# Requirements
+Running this project
+and tests require the following installed:
+
+`solc` (>=0.8.10). We also recommend using solc-select for more flexibility.
+
+`anvil`
+
+`geth`
+
 # Installation
 Run the following command directly to install from crates.io.
 
@@ -9,8 +19,7 @@ Run the following command directly to install from crates.io.
 
 ## Installing from Source
 
-cargo install --git https://github.com/yuliyu123/morge
-
+`cargo install --git https://github.com/yuliyu123/morge`
 
 # Usage
 Initialize morge to create config file under .morge directory: `morge init`
