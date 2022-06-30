@@ -1,6 +1,9 @@
 
+# title
+morge -- A batch of solidity contracts deployment tool
+
 # Description
-A batch of solidity contracts deployment tool developed by rust, support Ethereum and Celo and other evm-compatible chains.
+A batch of solidity contracts deployment tool developed by rust, support Ethereum and Celo and other evm-compatible chains. Project url: https://github.com/yuliyu123/morge.
 
 # Requirements
 Running this project
