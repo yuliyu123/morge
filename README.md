@@ -7,7 +7,9 @@ Running this project
 and tests require the following installed:
 
 `solc` (>=0.8.10). We also recommend using solc-select for more flexibility.
+
 `anvil`
+
 `geth`
 
 # Installation
