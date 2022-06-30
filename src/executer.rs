@@ -135,7 +135,6 @@ mod tests {
     async fn test_batch_contracts_run_success() {
         let num: u8 = 100;
         util::delete_sol_files(num).unwrap();
-        // Executer::clean().unwrap();
         // given
         util::create_sol_files(num).unwrap();
 

@@ -108,11 +108,20 @@ impl ContractInfo {
 
 #[cfg(test)]
 mod tests {
-    use ethers::utils::Anvil;
-    use std::time::Duration;
-    use tokio::time::timeout;
-
     use super::*;
+    use ethers::utils::Anvil;
+    use std::{
+        future::Future,
+        time::{Duration, SystemTime},
+    };
+
+    pub async fn run_at_least_duration(duration: Duration, block: impl Future) {
+        let start = SystemTime::now();
+        block.await;
+        if let Some(sleep) = duration.checked_sub(start.elapsed().unwrap()) {
+            tokio::time::sleep(sleep).await;
+        }
+    }
 
     #[tokio::test]
     async fn test_deploy_success() {
@@ -134,9 +143,9 @@ mod tests {
         let client = get_provider(&anvil, "".to_string(), "".to_string()).await;
 
         // when
-        // contract_info.run(client).await.unwrap();
-        timeout(Duration::from_millis(1000), contract_info.run(client))
-            .await
-            .unwrap();
+        run_at_least_duration(Duration::from_millis(250), async {
+            contract_info.run(client).await.unwrap();
+        })
+        .await
     }
 }
