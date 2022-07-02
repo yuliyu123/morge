@@ -9,7 +9,7 @@ use crate::contract::ContractInfo;
 use crate::utils::fs::*;
 use crate::{INIT_CFG, INIT_PATH};
 
-// init info, include mainnet and chain_id info, etc.
+// init config file, include rpc url、private key and contracts.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Config {
     pub rpc_url: Option<String>,
@@ -58,7 +58,7 @@ impl Config {
         Ok(())
     }
 
-    // add contract and args through -f x.sol:x --args a b c
+    // add contract and args by specify -f x.sol:x --args a b c
     pub fn add_contract(&mut self, contract: String, args: Vec<String>) -> eyre::Result<()> {
         match is_contract_existed(contract.clone()) {
             true => {

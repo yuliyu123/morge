@@ -62,7 +62,7 @@ impl Executer {
         self.set_config(cfg);
         match !self.cfg.contracts.is_empty() {
             true => {
-                // TODO: optimize memory
+                // Todo: optimize memory
                 let anvil = &Anvil::new().spawn();
                 let provider = get_provider(
                     anvil,
@@ -70,7 +70,6 @@ impl Executer {
                     self.cfg.pri_key.unwrap_or_else(|| "".to_string()),
                 )
                 .await;
-                // let provider = Arc::new(provider);
 
                 for mut contract in self.cfg.contracts {
                     contract.run(provider.clone()).await?;

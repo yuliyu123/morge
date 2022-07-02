@@ -2,7 +2,8 @@ use clap::{Arg, Command};
 
 pub fn cli() -> Command<'static> {
     Command::new("morge")
-        .about("A batch of contracts deployment CLI, support evm compatiable chains")
+        .about("A batch of contracts deployment CLI, currently support eth、goerli、kovan、rinkeby、ropsten、
+        polygon、polygon-mumbai、fantom、fantom-testnet、bsc、bsc-testnet chains.")
         .subcommand_required(true)
         .arg_required_else_help(true)
         .allow_external_subcommands(true)
@@ -73,8 +74,7 @@ pub fn cli() -> Command<'static> {
                         .short('t')
                         .long("tx")
                         .takes_value(true)
-                        .help("provide the transaction hash, currently support eth、goerli、celo、kovan、rinkeby、ropsten、
-                            polygon、polygon-mumbai、fantom、fantom-testnet、bsc、bsc-testnet chain"),
+                        .help("provide the transaction hash"),
                 )
                 .arg_required_else_help(true),
         )

@@ -63,7 +63,6 @@ impl ContractInfo {
         }
     }
 
-    // pub async fn create_and_run(&self, contract_info: &mut ContractInfo, provider, signer) -> eyre::Result<()> {
     pub async fn run<M: Middleware + 'static>(&mut self, provider: M) -> eyre::Result<()> {
         // compile to get abi and bytecode
         self.compile().await?;

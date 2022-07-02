@@ -1,6 +1,6 @@
 
 # Description
-A batch of solidity contracts deployment tool developed by rust, support Ethereum and Celo and other evm-compatible chains.
+A batch of solidity contracts deployment tool developed by rust, currently support eth、goerli、kovan、rinkeby、ropsten、polygon、polygon-mumbai、fantom、fantom-testnet、bsc、bsc-testnet chains.
 
 # Requirements
 Running this project
