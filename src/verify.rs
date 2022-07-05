@@ -94,4 +94,43 @@ mod tests {
         let res = Verify::verify_tx(chain, not_existed_tx).await.unwrap();
         assert!(!res);
     }
+
+    #[tokio::test]
+    // #[ignore = "maybe failed due to China gov firewall"]
+    async fn test_arbitrum_verify() {
+        let chain = "arbitrum";
+        let existed_tx = "0xc75a5d7ffccd3b8fc00a124a683b7e768e1a4d6a17a5977ed931965886109bf5";
+        let res = Verify::verify_tx(chain, existed_tx).await.unwrap();
+        assert!(res);
+
+        let not_existed_tx = "0xabcabcababcabcababcabcababcabcababcabcababcabcababcabcababcabcab";
+        let res = Verify::verify_tx(chain, not_existed_tx).await.unwrap();
+        assert!(!res);
+    }
+
+    #[tokio::test]
+    // #[ignore = "maybe failed due to China gov firewall"]
+    async fn test_optimism_verify() {
+        let chain = "optimism";
+        let existed_tx = "0x319c40f66639e3f1a5954621f93ad19b78043d0d8a5bbf65e20fa7f8929afd03";
+        let res = Verify::verify_tx(chain, existed_tx).await.unwrap();
+        assert!(res);
+
+        let not_existed_tx = "0xabcabcababcabcababcabcababcabcababcabcababcabcababcabcababcabcab";
+        let res = Verify::verify_tx(chain, not_existed_tx).await.unwrap();
+        assert!(!res);
+    }
+
+    #[tokio::test]
+    // #[ignore = "maybe failed due to China gov firewall"]
+    async fn test_avalanche_verify() {
+        let chain = "avalanche";
+        let existed_tx = "0x4a9eeaeef2990af4aa915e1433e28bf6f45b04b96f29c3c09cf6f1b79f5bfd5c";
+        let res = Verify::verify_tx(chain, existed_tx).await.unwrap();
+        assert!(res);
+
+        let not_existed_tx = "0xabcabcababcabcababcabcababcabcababcabcababcabcababcabcababcabcab";
+        let res = Verify::verify_tx(chain, not_existed_tx).await.unwrap();
+        assert!(!res);
+    }
 }

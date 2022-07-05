@@ -31,6 +31,9 @@ static MAINNET_KEY: &str = "YRFQ5PZHZ888THDP27H4B671QYW5X4BBTU";
 static POLYGON_KEY: &str = "ERXCC9XEMMSSBN7NUAW889MIGEAAXA2MJJ";
 static FANTOM_KEY: &str = "YKFZMKCUR78W2QDRJ38V4XXB43Q58GZK1T";
 static BSC_KEY: &str = "YYGABQAHU3FICXGNI8IJ823DAAZ4TZZHEH";
+static ARBITRUM_KEY: &str = "U1P5XWVA3N77ZNVBDUU6ZYKKNBEGI86WGC";
+static OPTIMISM_KEY: &str = "CIC8KPRTUBPQ7VEFCKX9SVDK1HMBWK5G44";
+static AVAL_KEY: &str = "3MZTI5W7HSD117B5FGWN8FHWUQGX9GJV4C";
 
 lazy_static! {
     static ref CHAINS_MAP: HashMap<&'static str, Chain> = {
@@ -46,6 +49,12 @@ lazy_static! {
         chains_map.insert("fantom-testnet", Chain::FantomTestnet);
         chains_map.insert("bsc", Chain::BinanceSmartChain);
         chains_map.insert("bsc-testnet", Chain::BinanceSmartChainTestnet);
+        chains_map.insert("arbitrum", Chain::Arbitrum);
+        chains_map.insert("arbitrum-testnet", Chain::ArbitrumTestnet);
+        chains_map.insert("optimism", Chain::Optimism);
+        chains_map.insert("optimism-kovan", Chain::OptimismKovan);
+        chains_map.insert("avalanche", Chain::Avalanche);
+        chains_map.insert("avalanche-fuji", Chain::AvalancheFuji);
         chains_map
     };
     static ref KEYS_MAP: HashMap<&'static str, &'static str> = {
@@ -61,6 +70,12 @@ lazy_static! {
         keys_map.insert("fantom-testnet", FANTOM_KEY);
         keys_map.insert("bsc", BSC_KEY);
         keys_map.insert("bsc-testnet", BSC_KEY);
+        keys_map.insert("arbitrum", ARBITRUM_KEY);
+        keys_map.insert("arbitrum-testnet", ARBITRUM_KEY);
+        keys_map.insert("optimism", OPTIMISM_KEY);
+        keys_map.insert("optimism-kovan", OPTIMISM_KEY);
+        keys_map.insert("avalanche", AVAL_KEY);
+        keys_map.insert("avalanche-fuji", AVAL_KEY);
         keys_map
     };
 }

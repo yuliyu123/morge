@@ -3,7 +3,8 @@ use clap::{Arg, Command};
 pub fn cli() -> Command<'static> {
     Command::new("morge")
         .about("A batch of contracts deployment CLI, currently support eth、goerli、kovan、rinkeby、ropsten、
-        polygon、polygon-mumbai、fantom、fantom-testnet、bsc、bsc-testnet chains.")
+        polygon、polygon-mumbai、fantom、fantom-testnet、bsc、bsc-testnet、arbitrum、arbitrum-testnet、
+        optimism、optimism-kovan、avalanche、avalanche-fuji chains.")
         .subcommand_required(true)
         .arg_required_else_help(true)
         .allow_external_subcommands(true)

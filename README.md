@@ -1,6 +1,6 @@
 
 # Description
-A batch of solidity contracts deployment tool developed by rust, currently support eth、goerli、kovan、rinkeby、ropsten、polygon、polygon-mumbai、fantom、fantom-testnet、bsc、bsc-testnet chains.
+A batch of solidity contracts deployment tool developed by rust, currently support eth、goerli、kovan、rinkeby、ropsten、polygon、polygon-mumbai、fantom、fantom-testnet、bsc、bsc-testnet、arbitrum、arbitrum-testnet、optimism、optimism-kovan、avalanche、avalanche-fuji chains.
 
 # Requirements
 Running this project
